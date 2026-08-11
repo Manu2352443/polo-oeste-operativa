@@ -30,6 +30,16 @@
         <a href="/configuracion" class="tool-item">Configuración</a>
     </nav>
 
+    <div id="modalBloqueoPruebas" class="trial-block-modal" hidden role="dialog" aria-modal="true" aria-labelledby="tituloBloqueo">
+        <div class="trial-block-card">
+            <span class="trial-block-icon">!</span>
+            <p class="eyebrow">VERSIÓN DE PRUEBAS</p>
+            <h2 id="tituloBloqueo">Bloqueado en versión de pruebas</h2>
+            <p>Este módulo no forma parte de la validación actual.</p>
+            <button id="cerrarBloqueoPruebas" type="button" class="filter-button">Cerrar</button>
+        </div>
+    </div>
+
     <main class="main-content">
         <section class="activity-table-card">
             <div class="table-header">
@@ -82,6 +92,17 @@
         const filtroConsulta = document.getElementById("filtroConsulta");
         const quitarFiltroActividad = document.getElementById("quitarFiltroActividad");
         const botonExportar = document.getElementById("botonExportar");
+        const modalBloqueoPruebas = document.getElementById("modalBloqueoPruebas");
+        function abrirBloqueoPruebas() { modalBloqueoPruebas.hidden = false; }
+        function cerrarBloqueoPruebas() { modalBloqueoPruebas.hidden = true; }
+        document.getElementById("cerrarBloqueoPruebas").addEventListener("click", cerrarBloqueoPruebas);
+        modalBloqueoPruebas.addEventListener("click", function(evento) { if (evento.target === modalBloqueoPruebas) cerrarBloqueoPruebas(); });
+        document.querySelectorAll(".tool-bar a").forEach(function(enlace) {
+            if (enlace.getAttribute("href") !== "/actividad" && enlace.getAttribute("href") !== "/configuracion") {
+                enlace.addEventListener("click", function(evento) { evento.preventDefault(); abrirBloqueoPruebas(); });
+            }
+        });
+        if (new URLSearchParams(location.search).has("bloqueado")) abrirBloqueoPruebas();
 
         function crearCelda(texto) { const celda = document.createElement("td"); celda.textContent = texto; return celda; }
         function mostrarMensaje(texto) { tablaActividad.innerHTML = `<tr><td colspan="6" class="empty-table">${texto}</td></tr>`; }

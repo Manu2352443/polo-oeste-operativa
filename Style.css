@@ -130,3 +130,10 @@ button:disabled { cursor: not-allowed; opacity: .48; filter: grayscale(1); trans
 @media (max-width: 800px) { .login-page { display: block; } .brand-panel { display: none; } .form-panel { min-height: 100vh; padding: 32px 22px; } .mobile-brand { display: inline-flex; margin-bottom: 56px; } .main-banner { padding: 24px 20px 39px; } .tool-bar { justify-content: flex-start; overflow-x: auto; } .tool-item { white-space: nowrap; } }
 @media (max-width: 600px) { .brand-logo { width: 178px; } .banner-top, .table-header { align-items: flex-start; flex-direction: column; } .table-tools, .table-actions { width: 100%; justify-items: stretch; } .table-actions, .import-activity-form { align-items: stretch; flex-direction: column; } .date-filter input, .filter-button, .export-button, .import-activity-form input[type="file"] { width: 100%; } .table-status { justify-content: flex-start; } .main-content { padding: 30px 15px 50px; } .activity-table-card { border-radius: 11px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; } }
+/* Bloqueo visual de módulos durante la validación de Actividad. */
+.trial-block-modal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 24px; background: rgba(7, 12, 8, .72); backdrop-filter: blur(7px); }
+.trial-block-modal[hidden] { display: none; }
+.trial-block-card { width: min(100%, 410px); padding: 30px; text-align: center; color: var(--text, #edf3ee); background: var(--surface, #172018); border: 1px solid rgba(118, 190, 73, .45); border-radius: 18px; box-shadow: 0 22px 60px rgba(0, 0, 0, .45); }
+.trial-block-card h2 { margin: 9px 0; font-size: 23px; }
+.trial-block-card p:not(.eyebrow) { color: var(--muted, #a8b5aa); margin: 0 0 22px; }
+.trial-block-icon { display: grid; place-items: center; width: 42px; height: 42px; margin: 0 auto 13px; border-radius: 50%; color: #101811; background: #8bcf58; font-weight: 800; font-size: 24px; }

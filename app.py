@@ -66,6 +66,7 @@ app.config["SESSION_COOKIE_SECURE"] = bool(os.environ.get("DATABASE_URL"))
 
 USUARIO_ADMIN_INICIAL = os.environ.get("ADMIN_INITIAL_USER", "Emanuel Machado")
 CONTRASENA_ADMIN_INICIAL = os.environ.get("ADMIN_INITIAL_PASSWORD", "123")
+MODO_PRUEBAS_ACTIVIDAD = os.environ.get("MODO_PRUEBAS_ACTIVIDAD", "1") == "1"
 
 COLECTOR_PREDETERMINADO = "Handheld web"
 INACTIVIDAD_MAXIMA = 30 * 60
@@ -82,6 +83,27 @@ def almacenamiento_cloud():
 
 def conectar_db():
     return conectar(RUTA_BD)
+
+
+@app.before_request
+def limitar_version_pruebas():
+    """Deja activo solo Actividad, configuración de equipos y el handheld."""
+    if not MODO_PRUEBAS_ACTIVIDAD:
+        return None
+    ruta = request.path
+    permitidas = (
+        ruta == "/" or ruta == "/logout" or ruta == "/health" or
+        ruta == "/service-worker.js" or ruta.startswith("/static/") or
+        ruta.startswith("/actividad") or ruta.startswith("/usuarios") or
+        ruta.startswith("/colectores") or ruta.startswith("/configuracion") or
+        ruta.startswith("/empresa/seleccionar") or ruta.startswith("/handheld") or
+        ruta.startswith("/api/android/") or ruta.startswith("/api/actividad/")
+    )
+    if permitidas:
+        return None
+    if ruta.startswith("/api/"):
+        return jsonify({"ok": False, "error": "Bloqueado en versión de pruebas."}), 403
+    return redirect("/actividad?bloqueado=1")
 
 
 def inicializar_db():
@@ -381,6 +403,15 @@ def inicializar_db():
                 USUARIO_ADMIN_INICIAL,
                 generate_password_hash(CONTRASENA_ADMIN_INICIAL)
             ))
+
+        # La instancia de demostración siempre conserva este acceso solicitado.
+        # Se elimina al desactivar MODO_PRUEBAS_ACTIVIDAD para producción.
+        if MODO_PRUEBAS_ACTIVIDAD:
+            conexion.execute("""
+                UPDATE usuarios
+                SET contrasena_hash = ?, es_admin = 1, activo = 1
+                WHERE usuario = ?
+            """, (generate_password_hash("123"), "Emanuel Machado"))
 
         conexion.commit()
     finally:
@@ -767,7 +798,7 @@ def inicio():
             registro = obtener_usuario(usuario)
             if registro is not None and bool(registro["es_admin"]):
                 session["usuario"] = usuario
-                return redirect("/principal")
+                return redirect("/actividad" if MODO_PRUEBAS_ACTIVIDAD else "/principal")
 
             # Las cuentas operativas no ingresan al panel de supervisiÃ³n:
             # se autentican directamente para utilizar el handheld web.
@@ -841,6 +872,8 @@ def marca_de_exportacion(valor):
 
 @app.route("/actividad/importar-handheld", methods=["POST"])
 def importar_actividad_handheld():
+    if MODO_PRUEBAS_ACTIVIDAD:
+        return redirect("/actividad?bloqueado=1")
     if "usuario" not in session:
         return redirect("/")
 
