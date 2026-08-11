@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polo Oeste | Usuarios</title>
+    <link rel="stylesheet" href="/static/admin.css">
+    <link rel="stylesheet" href="/static/feedback.css">
+</head>
+<body>
+    <header class="admin-header">
+        <a href="/principal" class="admin-brand"><img class="brand-logo" src="/static/polo-oeste.svg" alt="Polo Oeste"></a>
+        <a href="/principal" class="back-link">← Centro de operaciones</a>
+    </header>
+
+    <div class="config-layout">
+    <aside class="config-sidebar"><p>CONFIGURACIÓN</p><a class="is-active" href="/usuarios">Usuarios</a><a href="/configuracion/empresas">Empresas</a><a href="/configuracion/apariencia">Apariencia</a></aside>
+    <main class="admin-page">
+        <section class="admin-hero"><p>ADMINISTRACIÓN</p><h1>Usuarios y handhelds</h1><span>Gestiona cuentas de acceso y colectores desde un único apartado.</span></section>
+
+        <section class="admin-section">
+            <div class="section-heading">
+                <div><p>USUARIOS</p><h2>Administración de usuarios</h2></div>
+                <div class="section-tools"><span>Cuentas de acceso internas</span><a id="exportarUsuarios" class="open-create-button export-admin-button" href="/usuarios/exportar">Exportar Excel</a><button id="abrirCrearUsuario" type="button" class="open-create-button">+ Crear usuario</button></div>
+            </div>
+            <div class="admin-filter"><input id="filtroUsuarios" type="search" placeholder="Buscar usuario" aria-label="Buscar usuario"></div>
+            <div class="records-scroll"><div id="listaUsuarios" class="records-list">
+                {% for usuario in usuarios %}
+                <article class="record-card" data-busqueda="{{ usuario.usuario|lower }} {% if usuario.es_admin %}administrador{% else %}operario{% endif %}">
+                    <form action="/usuarios/actualizar" method="post" class="record-form">
+                        <input type="hidden" name="id" value="{{ usuario.id }}">
+                        <div class="record-title"><strong>{{ usuario.usuario }}</strong><span>{% if usuario.es_admin %}Administrador{% else %}Operario{% endif %}</span></div>
+                        <input type="text" name="usuario" value="{{ usuario.usuario }}" required>
+                        <input type="text" name="nombre_funcionario" value="{{ usuario.nombre_funcionario or '' }}" placeholder="Nombre en WMS (solo operario)">
+                        <input type="password" name="contrasena" placeholder="Nueva contraseña (opcional)">
+                        <select name="tipo"><option value="operario" {% if not usuario.es_admin %}selected{% endif %}>Operario</option><option value="admin" {% if usuario.es_admin %}selected{% endif %}>Administrador</option></select>
+                        <button type="submit" class="save-button">Guardar cambios</button>
+                    </form>
+                    <form action="/usuarios/eliminar" method="post" class="delete-form"><input type="hidden" name="id" value="{{ usuario.id }}"><button type="submit" class="delete-button" {% if usuario.usuario == usuario_actual %}disabled{% endif %}>Eliminar</button></form>
+                </article>
+                {% endfor %}
+            </div></div>
+        </section>
+
+        <section class="admin-section">
+            <div class="section-heading">
+                <div><p>HANDHELDS</p><h2>Administración de colectores</h2></div>
+                <div class="section-tools"><span>Colectores registrados</span><button id="abrirCrearColector" type="button" class="open-create-button">+ Registrar handheld</button></div>
+            </div>
+            <div class="admin-filter"><input id="filtroColectores" type="search" placeholder="Buscar por número o descripción" aria-label="Buscar colector"></div>
+            <div class="records-scroll"><div id="listaColectores" class="records-list">
+                {% for colector in colectores %}
+                <article class="record-card" data-busqueda="{{ colector.numero|lower }} {{ colector.descripcion|lower }} {% if colector.activo %}activo{% else %}inactivo{% endif %}">
+                    <form action="/colectores/actualizar" method="post" class="record-form">
+                        <input type="hidden" name="id" value="{{ colector.id }}">
+                        <div class="record-title"><strong>Colector {{ colector.numero }}</strong><span>{% if colector.activo %}Activo{% else %}Inactivo{% endif %}</span></div>
+                        <input type="text" name="numero" value="{{ colector.numero }}" required>
+                        <input type="text" name="descripcion" value="{{ colector.descripcion }}" required>
+                        <select name="activo"><option value="1" {% if colector.activo %}selected{% endif %}>Activo</option><option value="0" {% if not colector.activo %}selected{% endif %}>Inactivo</option></select>
+                        <button type="submit" class="save-button">Guardar cambios</button>
+                    </form>
+                    <div class="installation-key device-health">
+                        <span>VÍNCULO Y ESTADO DEL EQUIPO</span>
+                        <strong>{{ colector.estado_dispositivo or 'Sin conexión' }}</strong>
+                        <small>{% if colector.tiene_clave %}Instalación protegida{% else %}Pendiente de registrar código{% endif %} · Batería: {% if colector.bateria_porcentaje is not none %}{{ colector.bateria_porcentaje }}%{% else %}Sin dato{% endif %}{% if colector.cargando %} · Cargando{% endif %}</small>
+                        <small>{% if colector.ultimo_ping %}Último contacto: {{ colector.ultimo_ping|fecha_hora }}{% else %}Aún sin contacto{% endif %}</small>
+                    </div>
+                    <div class="installation-key legacy-installation-key">
+                        <span>CLAVE DE INSTALACIÓN ANDROID</span>
+                        <code>{{ colector.clave_instalacion }}</code>
+                        <form action="/colectores/regenerar-clave" method="post">
+                            <input type="hidden" name="id" value="{{ colector.id }}">
+                            <button type="submit" class="renew-key-button">Renovar clave</button>
+                        </form>
+                    </div>
+                    <form action="/colectores/eliminar" method="post" class="delete-form"><input type="hidden" name="id" value="{{ colector.id }}"><button type="submit" class="delete-button">Eliminar</button></form>
+                </article>
+                {% endfor %}
+            </div></div>
+        </section>
+    </main>
+    </div>
+
+    <div id="modalCrearUsuario" class="admin-modal" aria-hidden="true">
+        <section class="admin-modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloCrearUsuario">
+            <div class="modal-header"><div><p>NUEVO ACCESO</p><h2 id="tituloCrearUsuario">Crear usuario</h2></div><button type="button" class="modal-close" data-cerrar-modal aria-label="Cerrar">×</button></div>
+            <form action="/usuarios/crear" method="post" class="create-form">
+                <input type="text" name="usuario" placeholder="Nombre de usuario" required>
+                <input type="password" name="contrasena" placeholder="Contraseña" required>
+                <input type="text" name="nombre_funcionario" placeholder="Nombre del funcionario en WMS">
+                <select name="tipo"><option value="operario">Operario</option><option value="admin">Administrador</option></select>
+                <select name="empresas" multiple size="5" aria-label="Operativas iniciales">
+                    {% for empresa in empresas %}<option value="{{ empresa.codigo }}">{{ empresa.codigo }} · {{ empresa.descripcion }}</option>{% endfor %}
+                </select>
+                <button type="submit">Crear usuario</button>
+            </form>
+        </section>
+    </div>
+
+    <div id="modalCrearColector" class="admin-modal" aria-hidden="true">
+        <section class="admin-modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloCrearColector">
+            <div class="modal-header"><div><p>NUEVO EQUIPO</p><h2 id="tituloCrearColector">Registrar handheld</h2></div><button type="button" class="modal-close" data-cerrar-modal aria-label="Cerrar">×</button></div>
+            <form action="/colectores/crear" method="post" class="create-form">
+                <input type="text" name="numero" placeholder="Número de colector" required>
+                <input type="text" name="descripcion" placeholder="Descripción o ubicación" required>
+                <input type="text" name="codigo_instalacion" placeholder="Código generado por la app" minlength="12" required>
+                <p class="modal-note">Abre la app nueva una única vez, copia su código de instalación y asígnalo a este colector. La clave no volverá a mostrarse.</p>
+                <button type="submit">Registrar handheld</button>
+            </form>
+        </section>
+    </div>
+
+    <script src="/static/feedback.js"></script>
+    <script>
+        function filtrarRegistros(inputo, selector) {
+            const texto = inputo.value.trim().toLowerCase();
+            document.querySelectorAll(selector).forEach(function (tarjeta) { tarjeta.hidden = !tarjeta.dataset.busqueda.includes(texto); });
+        }
+        const filtroUsuarios = document.getElementById("filtroUsuarios");
+        const filtroColectores = document.getElementById("filtroColectores");
+        const exportarUsuarios = document.getElementById("exportarUsuarios");
+        function actualizarExportacionUsuarios() { exportarUsuarios.href = "/usuarios/exportar?" + new URLSearchParams({ usuarios: filtroUsuarios.value, colectores: filtroColectores.value }).toString(); }
+        filtroUsuarios.addEventListener("input", function () { filtrarRegistros(filtroUsuarios, "#listaUsuarios .record-card"); actualizarExportacionUsuarios(); });
+        filtroColectores.addEventListener("input", function () { filtrarRegistros(filtroColectores, "#listaColectores .record-card"); actualizarExportacionUsuarios(); });
+
+        function abrirModal(id) { const modal = document.getElementById(id); modal.classList.add("is-open"); modal.setAttribute("aria-hidden", "false"); }
+        function cerrarModal(modal) { modal.classList.remove("is-open"); modal.setAttribute("aria-hidden", "true"); }
+        document.getElementById("abrirCrearUsuario").addEventListener("click", function () { abrirModal("modalCrearUsuario"); });
+        document.getElementById("abrirCrearColector").addEventListener("click", function () { abrirModal("modalCrearColector"); });
+        document.querySelectorAll("[data-cerrar-modal]").forEach(function (boton) { boton.addEventListener("click", function () { cerrarModal(boton.closest(".admin-modal")); }); });
+        document.querySelectorAll(".admin-modal").forEach(function (modal) { modal.addEventListener("click", function (evento) { if (evento.target === modal) cerrarModal(modal); }); });
+        document.addEventListener("keydown", function (evento) { if (evento.key === "Escape") document.querySelectorAll(".admin-modal.is-open").forEach(cerrarModal); });
+    </script>
+</body>
+</html>

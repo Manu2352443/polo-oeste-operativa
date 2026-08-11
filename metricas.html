@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polo Oeste | Métricas</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/metricas.css">
+    <link rel="stylesheet" href="/static/feedback.css">
+</head>
+<body class="principal-page">
+    <header class="main-banner activity-banner metrics-banner">
+        <div class="banner-top">
+            <a class="brand" href="/principal"><img class="brand-logo" src="/static/polo-oeste.svg" alt="Polo Oeste"></a>
+            <button class="load-button" type="button" data-open-load>+ Carga de datos</button>
+        </div>
+        <div class="banner-content">
+            <p class="eyebrow">INTELIGENCIA OPERATIVA</p>
+            <h1>Métricas de la operación</h1>
+            <p>Integra los reportes diarios del WMS y consulta el rendimiento por tarea y funcionario.</p>
+        </div>
+    </header>
+
+    <div class="company-strip"><form action="/empresa/seleccionar" method="post"><span>OPERATIVA</span><input type="hidden" name="volver" value="/metricas"><select name="empresa_codigo" onchange="this.form.submit()"><option value="">Todas las empresas</option>{% for empresa in empresas_menu %}<option value="{{ empresa.codigo }}" {% if empresa.codigo == empresa_seleccionada %}selected{% endif %}>{{ empresa.codigo }} · {{ empresa.descripcion }}</option>{% endfor %}</select></form></div>
+    <nav class="tool-bar" aria-label="Módulos del sistema">
+        <a href="/principal" class="tool-item">Inicio</a>
+        <a href="/actividad" class="tool-item">Actividad</a>
+        <a href="/embarques" class="tool-item">Embarques</a>
+        <a href="/metricas" class="tool-item active">Métricas</a>
+        <a href="/organizador" class="tool-item">Organizador</a>
+        <a href="/configuracion" class="tool-item">Configuración</a>
+    </nav>
+
+    <main class="main-content metrics-content">
+        <section class="metrics-filter-card">
+            <div>
+                <p class="eyebrow">PERÍODO DE CONSULTA</p>
+                <h2>Resumen mensual: {{ mes }}</h2>
+            </div>
+            <form class="metrics-filter" method="get" action="/metricas">
+                <label for="mes">MES OPERATIVO
+                    <input id="mes" name="mes" type="month" value="{{ mes }}">
+                </label>
+                <button type="submit" class="filter-button">Aplicar</button>
+                <a class="filter-button clear-filter" href="/metricas">Último mes con datos</a>
+                <a class="export-button" href="/metricas/exportar?mes={{ mes }}">Exportar Excel</a>
+            </form>
+        </section>
+
+        <section class="metric-cards">
+            <article class="metric-card metric-card--picking"><span>UNIDADES DE PICKING</span><strong>{{ resumen['Picking'] }}</strong><small>PRD095 integrado desde Trace de Stock</small><a href="/metricas/detalle/picking" class="metric-card-action">Ver detalle <span>→</span></a></article>
+            <article class="metric-card metric-card--storage"><span>UNIDADES ALMACENADAS</span><strong>{{ resumen['Almacenaje'] }}</strong><small>REC522 y REC510 del Trace</small><a href="/metricas/detalle/almacenaje" class="metric-card-action">Ver detalle <span>→</span></a></article>
+            <article class="metric-card metric-card--shipping"><span>UNIDADES EN EXPEDICIÓN</span><strong>{{ resumen['Expedición'] }}</strong><small>EXP040 del Trace de Stock</small></article>
+            <article class="metric-card metric-card--reception"><span>RECEPCIÓN DEL MES</span><strong>{{ recepcion_mes }}</strong><small>REC501 del Trace de Stock</small></article>
+            <article class="metric-card metric-card--total"><span>REGISTROS DEL MES</span><strong>{{ total_registros }}</strong><small>Sin duplicar cargas anteriores</small></article>
+            <article class="metric-card metric-card--picking"><span>PRODUCTIVIDAD PICKING</span><strong>↗</strong><small>Cruza PRD095 y tiempo de actividad</small><a href="/productividad-picking?mes={{ mes }}" class="metric-card-action">Ver comparativa <span>→</span></a></article>
+        </section>
+
+        <section class="metrics-panel">
+            <div class="panel-heading"><div><p class="eyebrow">RESUMEN POR DÍA</p><h3>Unidades operadas</h3></div></div>
+            <div class="table-scroll">
+                <table class="excel-table metrics-table">
+                    <thead><tr><th>Fecha</th><th>Picking</th><th>Almacenaje</th><th>Expedición</th><th>Funcionarios</th></tr></thead>
+                    <tbody>
+                    {% for dia in diarios %}
+                        <tr><td>{{ dia['fecha'] }}</td><td>{{ dia['picking']|int }}</td><td>{{ dia['almacenaje']|int }}</td><td>{{ dia['expedicion']|int }}</td><td>{{ dia['funcionarios'] }}</td></tr>
+                    {% else %}
+                        <tr><td colspan="5" class="empty-table">Aún no hay movimientos. Usa “Carga de datos” para integrar un reporte.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="ranking-grid">
+            {% for tarea in ['Picking', 'Almacenaje', 'Expedición'] %}
+            <article class="metrics-panel ranking-panel">
+                <div class="panel-heading"><div><p class="eyebrow">TOP OPERARIOS</p><h3>{{ tarea }}</h3></div></div>
+                <ol class="ranking-list">
+                    {% for fila in top_por_tarea[tarea] %}
+                    <li><span class="rank-number">{{ loop.index }}</span><strong>{{ fila['funcionario'] }}</strong><span>{{ fila['unidades']|int }} uds.</span></li>
+                    {% else %}
+                    <li class="ranking-empty">Sin datos para este período.</li>
+                    {% endfor %}
+                </ol>
+            </article>
+            {% endfor %}
+        </section>
+
+        <section class="metrics-panel">
+            <div class="panel-heading"><div><p class="eyebrow">FUNCIONARIOS POR DÍA</p><h3>Detalle de actividad WMS</h3></div></div>
+            <div class="table-scroll">
+                <table class="excel-table metrics-table">
+                    <thead><tr><th>Fecha</th><th>Tarea</th><th>Funcionario</th><th>Unidades</th></tr></thead>
+                    <tbody>
+                    {% for fila in funcionarios_diarios %}
+                        <tr><td>{{ fila['fecha'] }}</td><td><span class="task-tag task-tag--{{ fila['tarea']|lower|replace('í', 'i')|replace('ó', 'o') }}">{{ fila['tarea'] }}</span></td><td>{{ fila['funcionario'] }}</td><td>{{ fila['unidades']|int }}</td></tr>
+                    {% else %}
+                        <tr><td colspan="4" class="empty-table">No hay funcionarios registrados para el período seleccionado.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="metrics-panel import-history">
+            <div class="panel-heading"><div><p class="eyebrow">CONTROL DE CARGAS</p><h3>Últimos archivos integrados</h3></div><button class="filter-button" type="button" data-open-load>Cargar archivo</button></div>
+            <div class="table-scroll compact-scroll">
+                <table class="excel-table metrics-table">
+                    <thead><tr><th>Fecha de carga</th><th>Fuente</th><th>Archivo</th><th>Nuevos</th><th>Repetidos</th><th>Omitidos</th><th></th></tr></thead>
+                    <tbody>
+                    {% for carga in cargas %}
+                        <tr>
+                            <td>{{ carga['cargado_en']|fecha_hora }}</td><td>{{ carga['tipo'] }}</td><td>{{ carga['archivo'] }}</td><td>{{ carga['registros_nuevos'] }}</td><td>{{ carga['repetidos'] }}</td><td>{{ carga['omitidos'] }}</td>
+                            <td><form class="record-delete-form" method="post" action="/metricas/carga/{{ carga['id'] }}/eliminar"><button class="record-delete-button" type="submit">Eliminar carga</button></form></td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="7" class="empty-table">Todavía no se cargaron archivos.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <div class="load-modal" id="loadModal" aria-hidden="true">
+        <div class="load-modal__backdrop" data-close-load></div>
+        <section class="load-modal__card" role="dialog" aria-modal="true" aria-labelledby="loadTitle">
+            <button class="modal-close" type="button" data-close-load aria-label="Cerrar">×</button>
+            <p class="eyebrow">CARGA DE DATOS</p>
+            <h2 id="loadTitle">Selecciona el reporte</h2>
+            <p>El sistema conservará el historial y omitirá registros que ya hayan sido integrados.</p>
+            <div class="load-options">
+                <form action="/metricas/cargar" method="post" enctype="multipart/form-data" data-progress="Integrando Trace de Stock..." data-progress-detail="Procesando picking, almacenaje, recepción y expedición">
+                    <input type="hidden" name="tipo" value="trace">
+                    <h3>Trace de Stock</h3>
+                    <span>Integra Picking (PRD095), almacenaje, recepción y expedición en una única carga.</span>
+                    <input name="archivo" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+                    <button type="submit">Cargar Trace</button>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <script src="/static/feedback.js"></script>
+    <script src="/static/table-sort.js"></script>
+    <script>
+        const modal = document.getElementById('loadModal');
+        document.querySelectorAll('[data-open-load]').forEach(button => button.addEventListener('click', () => { modal.classList.add('is-open'); modal.setAttribute('aria-hidden', 'false'); }));
+        document.querySelectorAll('[data-close-load]').forEach(button => button.addEventListener('click', () => { modal.classList.remove('is-open'); modal.setAttribute('aria-hidden', 'true'); }));
+        document.addEventListener('keydown', event => { if (event.key === 'Escape') { modal.classList.remove('is-open'); modal.setAttribute('aria-hidden', 'true'); } });
+    </script>
+    <script src="/static/date-picker.js"></script>
+</body>
+</html>

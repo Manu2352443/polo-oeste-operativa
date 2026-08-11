@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polo Oeste | Centro de operaciones</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/dashboard.css">
+    <link rel="stylesheet" href="/static/calendar.css">
+    <link rel="stylesheet" href="/static/feedback.css">
+</head>
+<body class="principal-page">
+    <header class="main-banner dashboard-banner">
+        <div class="banner-top">
+            <a class="brand" href="/principal">
+                <img class="brand-logo" src="/static/polo-oeste.svg" alt="Polo Oeste">
+            </a>
+
+            <div class="account-actions">
+                <span class="user-badge">{{ usuario }}</span>
+                <form action="/logout" method="post">
+                    <button type="submit" class="logout-button">Cerrar sesión</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="banner-content">
+            <p class="eyebrow">CENTRO DE OPERACIONES</p>
+            <h1>Tu operación, en un solo lugar.</h1>
+            <p>Monitorea equipos, actividad y los próximos ingresos logísticos.</p>
+        </div>
+    </header>
+
+    <div class="company-strip"><form action="/empresa/seleccionar" method="post"><span>OPERATIVA</span><input type="hidden" name="volver" value="/principal"><select name="empresa_codigo" onchange="this.form.submit()"><option value="">Todas las empresas</option>{% for empresa in empresas_menu %}<option value="{{ empresa.codigo }}" {% if empresa.codigo == empresa_seleccionada %}selected{% endif %}>{{ empresa.codigo }} · {{ empresa.descripcion }}</option>{% endfor %}</select></form></div>
+    <nav class="tool-bar" aria-label="Módulos del sistema">
+        <a href="/principal" class="tool-item active">Inicio</a>
+        <a href="/actividad" class="tool-item">Actividad</a>
+        <a href="/embarques" class="tool-item">Embarques</a>
+        <a href="/metricas" class="tool-item">Métricas</a>
+        <a href="/organizador" class="tool-item">Organizador</a>
+        <a href="/configuracion" class="tool-item">Configuración</a>
+    </nav>
+
+    <main class="dashboard-content">
+        <section class="dashboard-title">
+            <div>
+                <p class="eyebrow">VISTA GENERAL</p>
+                <h2>Operación de hoy</h2>
+            </div>
+            <div class="dashboard-status"><span id="alertaEmbarques" class="arrival-alert" hidden></span><span id="ultimaActualizacion" class="last-update">Actualizando…</span></div>
+        </section>
+
+        <section class="summary-grid">
+            <article class="summary-card operator-card">
+                <div class="summary-card-header">
+                    <div class="summary-icon">●</div>
+                    <span>ESTADO DE OPERARIOS</span>
+                </div>
+                <div class="double-counter">
+                    <div><small>ACTIVOS</small><strong id="operariosActivos">0</strong></div>
+                    <div><small>PAUSADOS</small><strong id="sesionesPausadas">0</strong></div>
+                    <div><small>DISPONIBLES</small><strong id="funcionariosDisponibles">0</strong><span id="detalleDisponibilidad">Sin planificación</span></div>
+                </div>
+                <a href="/actividad" class="operator-link">Abrir actividad <span>→</span></a>
+            </article>
+
+            <article class="summary-card shipping-card">
+                <div class="summary-card-header">
+                    <div class="summary-icon neutral-icon">▣</div>
+                    <span>ESTADO DE EMBARQUES</span>
+                </div>
+                <div class="double-counter">
+                    <div><small>EN PROCESO</small><strong id="embarquesProceso">0</strong></div>
+                    <div><small>PRÓXIMOS</small><strong id="embarquesProximos">0</strong></div>
+                </div>
+                <a href="/embarques" class="operator-link">Abrir embarques <span>→</span></a>
+            </article>
+
+            <article class="summary-card today-card">
+                <div class="summary-card-header"><div class="summary-icon neutral-icon">✓</div><span>PENDIENTES DE HOY</span></div>
+                <div id="tareasHoy" class="today-tasks"><p>Consultando agenda…</p></div>
+                <a href="/organizador" class="operator-link">Abrir organizador <span>→</span></a>
+            </article>
+        </section>
+
+        <section class="dashboard-grid">
+            <article class="dashboard-panel calendar-panel">
+                <div class="panel-heading">
+                    <div>
+                        <p class="eyebrow">PLANIFICACIÓN</p>
+                        <h3 id="tituloCalendario">Calendario</h3>
+                    </div>
+                    <div class="calendar-controls">
+                        <button id="mesAnterior" type="button" aria-label="Mes anterior">←</button>
+                        <button id="mesSiguiente" type="button" aria-label="Mes siguiente">→</button>
+                    </div>
+                </div>
+                <div class="calendar-weekdays"><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span></div>
+                <div id="calendario" class="calendar-days"></div>
+            </article>
+
+            <article class="dashboard-panel ingresos-panel operational-summary-panel">
+                <div class="panel-heading">
+                    <div>
+                        <p class="eyebrow">RESUMEN OPERATIVO</p>
+                        <h3 id="tituloResumenAnterior">Últimos datos operativos</h3>
+                    </div>
+                </div>
+                <div class="previous-summary">
+                    <div><small>PICKING</small><strong id="resumenPicking">0</strong><span id="fechaPicking">Sin registros</span></div>
+                    <div><small>ALMACENAJE</small><strong id="resumenAlmacenaje">0</strong><span id="fechaAlmacenaje">Sin registros</span></div>
+                    <div><small>EXPEDICIÓN</small><strong id="resumenExpedicion">0</strong><span id="fechaExpedicion">Sin registros</span></div>
+                </div>
+                <p id="resumenFuncionarios" class="previous-summary-note">Se mostrarán los últimos registros disponibles por tarea.</p>
+                <a id="enlaceResumenMetricas" class="operator-link previous-summary-link" href="/metricas">Abrir métricas <span>→</span></a>
+                <div class="inline-distribution">
+                    <div class="inline-distribution-heading"><span>Distribución del último día</span><small id="tituloDistribucion">Sin registros</small></div>
+                    <div class="task-share-layout">
+                        <div id="graficaDistribucion" class="task-donut task-donut--compact" aria-label="Distribución de unidades por tarea"><div><strong id="totalDistribucion">0</strong><span>unidades</span></div></div>
+                        <div id="leyendaDistribucion" class="task-share-legend"><p class="empty-share">Cargando distribución operativa…</p></div>
+                    </div>
+                </div>
+            </article>
+        </section>
+    </main>
+
+    <script src="/static/feedback.js"></script>
+    <script src="/static/dashboard.js"></script>
+</body>
+</html>

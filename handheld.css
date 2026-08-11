@@ -1,0 +1,76 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap");
+@import url("/static/theme.css");
+:root { --bg: #101611; --deep: #080d09; --surface: #182119; --raised: #212d23; --line: #35443a; --text: #edf3ee; --muted: #9ba89e; --green: #76be49; --green-light: #9bdb72; --danger: #e36c67; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { min-height: 100vh; margin: 0; color: var(--text); background: radial-gradient(circle at 90% 0, rgba(118,190,73,.13), transparent 24rem), var(--bg); font-family: "Manrope", "Segoe UI", sans-serif; }
+.handheld-login { position: relative; display: grid; min-height: 100vh; place-items: center; overflow: hidden; padding: 24px; }
+.handheld-login::before { position: absolute; inset: -30%; opacity: .15; background-image: linear-gradient(rgba(155,219,114,.26) 1px, transparent 1px), linear-gradient(90deg, rgba(155,219,114,.26) 1px, transparent 1px); background-size: 38px 38px; content: ""; transform: rotate(-19deg); animation: handheld-grid 18s linear infinite; }
+.handheld-login-card { position: relative; width: min(100%, 415px); padding: 29px; border: 1px solid var(--line); border-radius: 17px; background: linear-gradient(145deg, rgba(31,42,33,.98), rgba(14,20,15,.98)); box-shadow: 0 23px 60px rgba(0,0,0,.38); }
+.handheld-logo { display: inline-flex; align-items: center; text-decoration: none; }
+.handheld-logo img { display: block; width: 180px; height: auto; }
+.handheld-login-card .handheld-logo { margin-bottom: 42px; }
+.handheld-eyebrow { margin: 0 0 10px; color: var(--green-light); font-family: "DM Mono", monospace; font-size: 10px; letter-spacing: 1.3px; }
+.handheld-login-card h1, .handheld-welcome h1 { margin: 0; font-size: 30px; letter-spacing: -1.2px; }
+.handheld-subtitle { margin: 10px 0 28px; color: var(--muted); font-size: 14px; line-height: 1.55; }
+.handheld-login-card form { display: flex; flex-direction: column; }
+.handheld-login-card label { margin-bottom: 8px; color: #dce7de; font-size: 12px; font-weight: 700; }
+.handheld-login-card input { width: 100%; height: 50px; margin-bottom: 19px; padding: 0 13px; border: 1px solid #3b4b3f; border-radius: 9px; outline: none; background: #0d140e; color: var(--text); font: inherit; font-size: 14px; }
+.handheld-login-card input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(118,190,73,.15); }
+.handheld-login-card input::placeholder { color: #728075; }
+.handheld-primary-button { height: 51px; border: 1px solid #86cf60; border-radius: 9px; background: linear-gradient(135deg, #9bdb72, #72ba47); color: #091009; cursor: pointer; font: inherit; font-size: 14px; font-weight: 800; }
+.handheld-help { margin: 23px 0 0; color: var(--muted); font-size: 12px; line-height: 1.55; text-align: center; }
+.handheld-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 21px; border-bottom: 1px solid var(--line); background: rgba(14,20,15,.88); backdrop-filter: blur(10px); }
+.handheld-online { display: flex; align-items: center; gap: 7px; color: #d2dfd3; font-size: 11px; font-weight: 700; }
+.handheld-online span { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 11px var(--green); }
+.handheld-online.is-offline span { background: var(--danger); box-shadow: 0 0 11px var(--danger); }
+.handheld-panel { max-width: 520px; margin: 0 auto; padding: 44px 21px 180px; }
+.handheld-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 27px; padding: 5px; border: 1px solid var(--line); border-radius: 11px; background: rgba(9, 14, 10, .55); }
+.handheld-tab { min-height: 39px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--muted); font: inherit; font-size: 11px; font-weight: 800; }
+.handheld-tab.is-active { border-color: #527a47; background: rgba(118,190,73,.15); color: #d3f1c1; }
+.handheld-welcome p:last-child { max-width: 370px; margin: 13px 0 30px; color: var(--muted); font-size: 14px; line-height: 1.65; }
+.handheld-status-card { display: flex; flex-direction: column; gap: 7px; padding: 21px; border: 1px solid var(--line); border-radius: 14px; background: linear-gradient(145deg, #202b22, #151d16); box-shadow: 0 17px 38px rgba(0,0,0,.2); }
+.status-label { color: var(--green-light); font-family: "DM Mono", monospace; font-size: 10px; letter-spacing: 1px; }
+.handheld-status-card > strong { font-size: 20px; letter-spacing: -.6px; }
+.handheld-status-card > span { color: var(--muted); font-size: 12px; line-height: 1.55; }
+.handheld-timer { display: flex; align-items: end; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--line); }
+.handheld-timer span { color: var(--muted); font-family: "DM Mono", monospace; font-size: 10px; letter-spacing: .8px; }
+.handheld-timer strong { color: #e6f6de; font-family: "DM Mono", monospace; font-size: 24px; letter-spacing: -1px; }
+.handheld-actions { display: grid; gap: 10px; margin-top: 19px; }
+.handheld-actions form { margin: 0; }
+.handheld-secondary-button, .handheld-logout-button { width: 100%; height: 49px; border-radius: 9px; cursor: pointer; font: inherit; font-size: 12px; font-weight: 800; }
+.handheld-secondary-button { border: 1px solid #455648; background: #202b22; color: #dce7dd; }
+.handheld-logout-button { border: 1px solid #465249; background: transparent; color: #c0cec2; }
+.handheld-secondary-button:hover, .handheld-logout-button:hover { background: #29362b; }
+.floating-controller { position: fixed; right: 20px; bottom: 23px; z-index: 10; display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 16px; border: 1px solid #48614d; border-radius: 999px; background: rgba(19, 28, 20, .96); box-shadow: 0 14px 40px rgba(0,0,0,.46); opacity: 0; transform: translateY(28px) scale(.92); pointer-events: none; transition: opacity .25s ease, transform .25s ease; backdrop-filter: blur(12px); }
+.floating-controller.is-visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.floating-information { display: flex; flex-direction: column; gap: 2px; }
+.floating-information span { color: #eff6ef; font-size: 12px; font-weight: 800; }
+.floating-information small { color: var(--muted); font-size: 10px; }
+.floating-play-button { display: grid; width: 55px; height: 55px; place-items: center; border: 1px solid #8ad564; border-radius: 50%; background: linear-gradient(135deg, #9bdb72, #72ba47); color: #091009; cursor: pointer; font-size: 19px; font-weight: 800; transition: transform .2s, filter .2s; }
+.floating-play-button:disabled { cursor: wait; opacity: .6; }
+.floating-play-button:active, .handheld-primary-button:active { transform: scale(.96); }
+.floating-play-button.is-active { background: #e6f4df; color: #26452a; }
+.handheld-controls { display: grid; gap: 9px; }
+.handheld-empty { padding: 21px; border: 1px dashed #405143; border-radius: 11px; color: var(--muted); font-size: 12px; line-height: 1.5; text-align: center; }
+.handheld-control-option { display: grid; gap: 5px; min-height: 72px; padding: 13px; border: 1px solid #405243; border-radius: 11px; background: linear-gradient(145deg, #202b22, #151d16); color: #ebf2eb; text-align: left; }
+.handheld-control-option strong { font-size: 14px; }
+.handheld-control-option span { color: var(--muted); font-size: 11px; }
+.handheld-control-card { padding: 17px; border: 1px solid var(--line); border-radius: 14px; background: linear-gradient(145deg, #202b22, #151d16); box-shadow: 0 17px 38px rgba(0,0,0,.2); }
+.handheld-control-heading { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
+.handheld-control-heading strong { display: block; margin-top: 7px; font-size: 17px; letter-spacing: -.5px; }
+.handheld-control-heading small { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+.handheld-compact-button { min-height: 34px; padding: 0 9px; border: 1px solid #4b5d4e; border-radius: 7px; background: #182119; color: #dbe6dc; font: inherit; font-size: 10px; font-weight: 800; }
+.handheld-scan-form { display: grid; grid-template-columns: 1fr 98px; gap: 10px; margin-top: 22px; }
+.handheld-scan-form label { display: grid; gap: 5px; color: var(--muted); font-family: "DM Mono", monospace; font-size: 9px; letter-spacing: .5px; }
+.handheld-scan-form input { width: 100%; height: 46px; margin: 0; padding: 0 11px; border: 1px solid #3b4b3f; border-radius: 8px; background: #0d140e; color: var(--text); font: inherit; }
+.handheld-scan-form button { grid-column: span 2; }
+.handheld-inline-message { min-height: 19px; margin: 10px 0 0; color: var(--muted); font-size: 11px; }
+.handheld-inline-message.is-ok { color: #c4eba9; }.handheld-inline-message.is-error { color: #ffaaa4; }
+.handheld-progress { margin-top: 16px; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.handheld-progress > div { display: flex; justify-content: space-between; color: var(--muted); font-family: "DM Mono", monospace; font-size: 9px; letter-spacing: .6px; }.handheld-progress strong { color: #e5f1e3; font-size: 11px; }
+.handheld-progress i { display: block; height: 7px; overflow: hidden; margin-top: 9px; border-radius: 999px; background: #0d140e; }.handheld-progress b { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg,#75bb49,#ade283); transition: width .3s; }
+.handheld-article-list { margin-top: 15px; }.handheld-list-heading, .handheld-article-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; }.handheld-list-heading { padding: 0 0 7px; color: var(--muted); font-family: "DM Mono", monospace; font-size: 9px; letter-spacing: .55px; }.handheld-article-row { min-height: 42px; align-items: center; border-top: 1px solid var(--line); color: #dce7dd; font-family: "DM Mono", monospace; font-size: 10px; }.handheld-article-row strong { color: #c8edb0; font-size: 10px; }
+@keyframes handheld-grid { to { transform: translate3d(38px,38px,0) rotate(-19deg); } }
+.handheld-body { position: relative; overflow-x: hidden; }.handheld-body::before { position: fixed; z-index: -1; top: 110px; right: -90px; width: 250px; height: 250px; border: 1px dashed rgba(150,218,113,.27); border-radius: 40%; content: ""; transform: rotate(18deg); animation: handheld-orbit 17s ease-in-out infinite; }.handheld-header { position: sticky; z-index: 8; top: 0; padding: 13px 18px; }.handheld-logo img { width: 160px; }.handheld-panel { max-width: 570px; padding: 30px 18px 160px; }.handheld-tabs { margin-bottom: 21px; box-shadow: 0 12px 30px rgba(0,0,0,.12); }.handheld-welcome { position: relative; padding-left: 14px; }.handheld-welcome::before { position: absolute; top: 3px; bottom: 28px; left: 0; width: 3px; border-radius: 999px; background: linear-gradient(var(--green-light),transparent); content: ""; }.handheld-welcome h1 { font-size: 28px; }.handheld-status-card,.handheld-control-card { position: relative; overflow: hidden; }.handheld-status-card::after,.handheld-control-card::after { position: absolute; right: -25px; bottom: -30px; width: 112px; height: 112px; border: 1px solid rgba(155,219,114,.16); border-radius: 50%; content: ""; }.floating-controller { border-color: #6c9865; }.floating-play-button { box-shadow: 0 0 0 7px rgba(118,190,73,.11),0 11px 25px rgba(0,0,0,.22); }.handheld-scan-form { position: relative; padding: 12px; border: 1px solid rgba(118,190,73,.22); border-radius: 11px; background: rgba(9,15,10,.24); }.handheld-scan-form::before { position: absolute; top: 6px; right: 10px; color: rgba(155,219,114,.7); font-family: "DM Mono",monospace; font-size: 8px; letter-spacing: 1px; content: "SCAN ZONE"; }.handheld-scan-form label { padding-top: 10px; }@keyframes handheld-orbit { 50% { transform: translate3d(-20px,17px,0) rotate(41deg); opacity: .5; } }
+@media (max-width: 380px) { .handheld-login-card { padding: 23px; } .handheld-panel { padding-top: 37px; } .floating-controller { right: 12px; bottom: 15px; padding-left: 13px; } .floating-information { max-width: 108px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; } }

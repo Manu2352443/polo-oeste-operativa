@@ -1,0 +1,6 @@
+.calendar-controls { display: flex; gap: 7px; }
+.calendar-controls button { display: grid; width: 33px; min-height: 33px; place-items: center; padding: 0; border-color: #46594a; border-radius: 8px; background: #202b22; color: #d7e5d8; font-size: 17px; box-shadow: none; }
+.calendar-controls button:hover { border-color: var(--green); background: #2a392c; box-shadow: none; }
+.calendar-day.ingreso-pendiente { border-color: rgba(226, 185, 75, .7); background: rgba(226, 185, 75, .2); color: #ffe69c; font-weight: 800; }
+.calendar-day.ingreso-vencido { border-color: rgba(227, 108, 103, .72); background: rgba(227, 108, 103, .2); color: #ffc6c2; font-weight: 800; }
+.calendar-day.ingreso-confirmado { border-color: rgba(118, 190, 73, .72); background: rgba(118, 190, 73, .2); color: #c8f0ad; font-weight: 800; }

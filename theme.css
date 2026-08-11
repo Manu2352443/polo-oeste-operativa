@@ -1,0 +1,40 @@
+:root { --field-text: #ffffff; --field-bg: #0e140f; --field-placeholder: #94a097; --theme-panel: #182019; --theme-panel-2: #202a22; --theme-line: #344039; --theme-text: #edf3ee; --theme-muted: #9ba89e; }
+html { color-scheme: dark; }
+html[data-theme="light"] { color-scheme: light; --field-text: #202a23; --field-bg: #e9ede9; --field-placeholder: #727d74; --theme-panel: #e3e7e3; --theme-panel-2: #d9dfda; --theme-line: #afb9b0; --theme-text: #222c25; --theme-muted: #5d685f; }
+body { transition: background-color .28s ease, color .28s ease; }
+input, select, textarea { color: var(--field-text) !important; caret-color: var(--field-text) !important; }
+input::placeholder, textarea::placeholder { color: var(--field-placeholder) !important; opacity: 1; }
+html[data-theme="light"] body { color: #222c25; background: radial-gradient(circle at 94% 0, rgba(92,143,76,.18), transparent 28rem), radial-gradient(circle at 0 100%, rgba(46,62,50,.11), transparent 30rem), #d9ded9; }
+html[data-theme="light"] body::before { opacity: .28; }
+html[data-theme="light"] .main-banner, html[data-theme="light"] .brand-panel { border-color: #a1aea2; background: radial-gradient(circle at 84% 12%, rgba(94,149,75,.22), transparent 23rem), linear-gradient(135deg,#d9e0d9,#c2cec3 72%); }
+html[data-theme="light"] .tool-bar, html[data-theme="light"] .company-strip, html[data-theme="light"] .admin-header, html[data-theme="light"] .handheld-header { border-color: #abb6ac; background: rgba(213,220,214,.96); }
+html[data-theme="light"] :is(.summary-card,.dashboard-panel,.activity-table-card,.admin-section,.record-card,.company-record,.organizer-modal-card,.calendar-card,.person-card,.absence-form,.absence-records,.schedule-scroll,.schedule-notes,.handheld-login-card,.handheld-status-card,.handheld-control-card,.handheld-control-option,.metrics-filter-card,.metric-card,.metrics-panel,.detail-total,.detail-empty-state,.load-modal__card,.load-options form,.productivity-note,.nuevo-embarque,.lista-embarques,.articulos-table,.embarque-card,.modal-card,.control-start-card,.control-workspace,.control-table-card,.control-summary-card,.control-confirm-card) { border-color: #a7b3a8; background: linear-gradient(145deg,#e2e7e2,#d1d8d1); color: #222c25; box-shadow: 0 13px 28px rgba(31,45,34,.12); }
+html[data-theme="light"] :is(.config-sidebar,.organizer-sidebar,.handheld-tabs,.schedule-filters,.milestones,.calendar-toolbar,.floating-controller,.handheld-progress i,.task-chip,.today-task,.share-legend-row,.load-options form) { border-color: #acb7ad; background: #cbd4cc; }
+html[data-theme="light"] :is(.excel-table,.schedule-table) { color: #18251a; }
+html[data-theme="light"] :is(.excel-table th,.schedule-table th,.calendar-weekdays) { border-color: #9da99e; background: #c2ccc3; color: #344237; }
+html[data-theme="light"] :is(.excel-table td,.schedule-table td,.calendar-day) { border-color: #b3bdb4; background: rgba(223,228,223,.94); }
+html[data-theme="light"] :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea) { border-color: #96a397 !important; background: #e4e9e4 !important; color: #202a23 !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.45); }
+html[data-theme="light"] :is(.back-link,.tool-item,.system-live,.user-badge,.handheld-online,.handheld-subtitle,.handheld-welcome p:last-child,.company-data,.person-ident p,.absence-item span,.absence-item p,.metric-card small,.embarque-info p,.detail-description,.ranking-list .ranking-empty) { color: #5c685f; }
+html[data-theme="light"] .main-banner { color: #202b22; }
+html[data-theme="light"] .banner-content p:last-child { color: #526055; }
+html[data-theme="light"] .config-sidebar a, html[data-theme="light"] .organizer-sidebar > a { color: #465348; }
+html[data-theme="light"] .config-sidebar a.is-active, html[data-theme="light"] .organizer-sidebar > a.active { color: #173b1c; background: linear-gradient(90deg, rgba(75,133,63,.34), rgba(75,133,63,.10)); }
+html[data-theme="light"] :is(.metric-card-action,.operator-link,.shipping-trace strong,.ranking-list li > span:last-child,.task-tag,.back-button) { color: #2c6d32; }
+html[data-theme="light"] :is(.clear-filter,.return-metrics,.edit-shipment-button,.movement-action,.handheld-secondary-button,.handheld-compact-button) { border-color: #758b78; background: #c4d0c5; color: #1d3720; }
+html[data-theme="light"] :is(.theme-option,.theme-option:hover,.theme-option.is-selected) { border-color: #bec8bf; background: linear-gradient(145deg,#f2f5f2,#e4e9e4); color: #2b372d; }
+html[data-theme="light"] .brand-logo, html[data-theme="light"] .admin-brand .brand-logo { filter: brightness(.47) contrast(1.18) saturate(.85); }
+html[data-theme="light"] select option { background: #dce3dc; color: #253129; }
+html:not([data-theme="light"]) select option { background: #111812; color: #ffffff; }
+body::after { position: fixed; z-index: -1; right: -100px; bottom: -55px; width: 340px; height: 160px; border: 1px dashed rgba(137,202,101,.28); border-radius: 52% 48% 0 0; content: ""; pointer-events: none; transform: rotate(-12deg); animation: po-route-drift 14s ease-in-out infinite; }
+html[data-theme="light"] .tool-item.active { border-color: #365e3a; background: #263b2a; color: #dff0d7; }
+html[data-theme="light"] .summary-icon { border-color: #537c55; background: #293d2c; color: #a6e77b; }
+html[data-theme="light"] .neutral-icon { border-color: #aab5ab; background: #dbe2db; color: #3f5141; }
+html[data-theme="light"] .metric-card::after { border-color: rgba(66,122,57,.28); }
+html[data-theme="light"] .metric-card--picking { border-top-color: #4c993e; }
+html[data-theme="light"] .metric-card--storage { border-top-color: #617d64; }
+html[data-theme="light"] .metric-card--shipping { border-top-color: #ae9033; }
+html[data-theme="light"] .metric-card--reception { border-top-color: #4f7ca6; }
+html[data-theme="light"] .metric-card--total { border-top-color: #426a49; }
+body .main-banner { min-height: 210px; padding-top: 20px; padding-bottom: 31px; } body .dashboard-banner { min-height: 220px; } body .activity-banner, body .organizer-banner { min-height: 198px; } body .banner-content { margin-top: 29px; } body .banner-content h1 { font-size: clamp(30px,4vw,46px); } body .brand-logo { width: min(255px, 58vw); }
+@keyframes po-route-drift { 50% { transform: translate3d(-24px,-8px,0) rotate(-12deg); opacity: .58; } }
+@media (prefers-reduced-motion: reduce) { body::after { animation: none; } }

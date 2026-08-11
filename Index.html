@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polo Oeste | Acceso</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/feedback.css">
+</head>
+<body>
+    <main class="login-page">
+        <section class="brand-panel" aria-label="Polo Oeste">
+            <div class="route-grid"></div>
+            <div class="route-line"></div>
+            <div class="route-marker"></div>
+
+            <a class="brand" href="/">
+                <img class="brand-logo" src="/static/polo-oeste.svg" alt="Polo Oeste">
+            </a>
+
+            <div class="brand-message">
+                <div class="brand-kicker"><span></span> OPERACIÓN LOGÍSTICA</div>
+                <p class="eyebrow">PLATAFORMA OPERATIVA</p>
+                <h1>La operación, siempre en movimiento.</h1>
+                <p>
+                    Gestiona equipos, actividad y embarques desde un mismo punto de control.
+                </p>
+            </div>
+
+            <p class="copyright">© 2026 Polo Oeste · Sistema de operación interna</p>
+        </section>
+
+        <section class="form-panel">
+            <div class="login-card">
+                <a class="mobile-brand" href="/">
+                    <img class="brand-logo" src="/static/polo-oeste.svg" alt="Polo Oeste">
+                </a>
+
+                <p class="eyebrow">ACCESO SEGURO</p>
+                <h2>Bienvenido de nuevo</h2>
+                <p class="subtitle">Ingresa tus datos para acceder al centro de operaciones.</p>
+
+                <form action="/" method="post">
+                    <label for="usuario">Usuario</label>
+                    <input id="usuario" name="usuario" type="text" placeholder="Ingresa tu usuario" autocomplete="username" required autofocus>
+
+                    <label for="contrasena">Contraseña</label>
+                    <input id="contrasena" name="contrasena" type="password" placeholder="Ingresa tu contraseña" autocomplete="current-password" required>
+
+                    <label class="remember">
+                        <input type="checkbox" name="recordarme">
+                        <span>Recordarme en este equipo</span>
+                    </label>
+
+                    <button type="submit">Ingresar al sistema <span>→</span></button>
+                </form>
+
+                <p class="register">Las cuentas son creadas y administradas internamente.</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="/static/feedback.js"></script>
+</body>
+</html>

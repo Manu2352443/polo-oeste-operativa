@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polo Oeste | Embarques</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/embarques.css">
+    <link rel="stylesheet" href="/static/feedback.css">
+</head>
+<body class="principal-page">
+    <header class="main-banner activity-banner">
+        <div class="banner-top">
+            <a class="brand" href="/principal"><img class="brand-logo" src="/static/polo-oeste.svg" alt="Polo Oeste"></a>
+            <span class="system-live">Módulo logístico</span>
+        </div>
+        <div class="banner-content">
+            <p class="eyebrow">CONTROL LOGÍSTICO</p>
+            <h1>Control de embarques</h1>
+            <p>Registra, confirma y consulta los ingresos programados para la operación.</p>
+        </div>
+    </header>
+
+    <div class="company-strip"><form action="/empresa/seleccionar" method="post"><span>OPERATIVA</span><input type="hidden" name="volver" value="/embarques"><select name="empresa_codigo" onchange="this.form.submit()"><option value="">Todas las empresas</option>{% for empresa in empresas_menu %}<option value="{{ empresa.codigo }}" {% if empresa.codigo == empresa_seleccionada %}selected{% endif %}>{{ empresa.codigo }} · {{ empresa.descripcion }}</option>{% endfor %}</select></form></div>
+    <nav class="tool-bar" aria-label="Módulos del sistema">
+        <a href="/principal" class="tool-item">Inicio</a>
+        <a href="/actividad" class="tool-item">Actividad</a>
+        <a href="/embarques" class="tool-item active">Embarques</a>
+        <a href="/metricas" class="tool-item">Métricas</a>
+        <a href="/organizador" class="tool-item">Organizador</a>
+        <a href="/configuracion" class="tool-item">Configuración</a>
+    </nav>
+
+    <main class="embarques-page">
+        <section class="lista-embarques">
+            <div class="section-row">
+                <div><p class="eyebrow">REGISTRO</p><h2>Embarques cargados</h2></div>
+                <button id="abrirCargaEmbarque" type="button" class="open-load-button">+ Cargar embarque</button>
+            </div>
+
+            <div class="filters">
+                <label class="shipment-date-filter" for="filtroFecha">FECHA TENTATIVA DE INGRESO
+                    <input id="filtroFecha" type="date" aria-label="Filtrar por fecha tentativa de ingreso">
+                </label>
+                <label class="shipment-date-filter" for="filtroDesde">DESDE
+                    <input id="filtroDesde" type="date" aria-label="Fecha desde">
+                </label>
+                <label class="shipment-date-filter" for="filtroHasta">HASTA
+                    <input id="filtroHasta" type="date" aria-label="Fecha hasta">
+                </label>
+                <input id="filtroProveedor" type="search" placeholder="Buscar en todos los datos" aria-label="Buscar en todos los datos">
+                <button id="quitarFiltrosEmbarques" type="button" class="filter-button">Quitar filtros</button>
+                <a id="exportarEmbarques" class="export-button" href="/embarques/exportar">Exportar Excel</a>
+            </div>
+            <div id="sinResultados" class="empty-shipping" hidden>No hay embarques que coincidan con la búsqueda.</div>
+
+            <div class="shipping-records-scroll">
+            {% if embarques %}
+                {% for embarque in embarques %}
+                <article class="embarque-card" data-fecha="{{ embarque.fecha }}" data-busqueda="{{ embarque.fecha }} {{ embarque.proveedor }} {{ embarque.barco }} {{ embarque.bultos }} {{ embarque.descripcion }} {{ embarque.estado }} {{ embarque.confirmado_en|fecha_hora }} {{ embarque.finalizado_en|fecha_hora }}" data-detalle="/embarques/{{ embarque.id }}/detalle">
+                    <div class="embarque-info">
+                        <span class="estado estado-{{ embarque.estado|lower|replace(' ', '-') }}">{{ embarque.estado }}</span>
+                        <h3>{{ embarque.proveedor }} · {{ embarque.barco }}</h3>
+                        <p>Fecha tentativa: {{ embarque.fecha }} · {{ embarque.bultos }} bultos</p>
+                        <p>{{ embarque.descripcion }}</p>
+                        <div class="shipping-trace">
+                            <span>Confirmado: <strong>{{ embarque.confirmado_en|fecha_hora }}</strong></span>
+                            <span>Finalizado: <strong>{{ embarque.finalizado_en|fecha_hora }}</strong></span>
+                        </div>
+                    </div>
+                    <div class="embarque-actions">
+                        {% if embarque.estado == "Proximo" %}
+                        <form action="/embarques/{{ embarque.id }}/confirmar" method="post" enctype="multipart/form-data" data-progress="Importando artículos…" data-progress-detail="Validando el archivo Excel del embarque">
+                            <label class="file-label">Excel de artículos<input type="file" name="archivo" accept=".xlsx" required></label>
+                            <button type="submit">Confirmar embarque</button>
+                        </form>
+                        {% endif %}
+                        {% if embarque.estado != "Proximo" %}
+                            <a href="/embarques/{{ embarque.id }}/articulos/excel">Descargar artículos</a>
+                            <a href="/embarques/{{ embarque.id }}/control">Control de ingreso</a>
+                        {% endif %}
+                        {% if embarque.estado == "En proceso" %}
+                        <form action="/embarques/{{ embarque.id }}/finalizar" method="post"><button type="submit" class="finish-button">Finalizar embarque</button></form>
+                        {% endif %}
+                        <button type="button" class="edit-shipment-button" data-editar-embarque data-id="{{ embarque.id }}" data-fecha="{{ embarque.fecha }}" data-proveedor="{{ embarque.proveedor }}" data-barco="{{ embarque.barco }}" data-bultos="{{ embarque.bultos }}" data-descripcion="{{ embarque.descripcion }}">Modificar</button>
+                        <form action="/embarques/{{ embarque.id }}/eliminar" method="post"><button type="submit" class="shipment-delete-button">Eliminar</button></form>
+                    </div>
+                </article>
+                {% endfor %}
+            {% else %}
+                <p class="empty-shipping">Aún no hay embarques registrados.</p>
+            {% endif %}
+            </div>
+        </section>
+    </main>
+
+    <div id="modalEmbarque" class="shipping-modal" aria-hidden="true">
+        <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalEmbarque">
+            <div class="modal-header">
+                <div><p class="eyebrow">NUEVO INGRESO</p><h2 id="tituloModalEmbarque">Cargar embarque</h2></div>
+                <button id="cerrarCargaEmbarque" type="button" class="modal-close" aria-label="Cerrar">×</button>
+            </div>
+            <form action="/embarques/crear" method="post" class="load-form">
+                <input type="date" name="fecha" aria-label="Fecha tentativa de ingreso" required>
+                <input type="text" name="proveedor" placeholder="Proveedor" required>
+                <input type="text" name="barco" placeholder="Barco transportador" required>
+                <input type="number" name="bultos" placeholder="Cantidad de bultos" min="1" required>
+                <textarea name="descripcion" placeholder="Descripción de lo que llegará" required></textarea>
+                <button type="submit">Registrar embarque <span>→</span></button>
+            </form>
+        </section>
+    </div>
+
+    <div id="modalEditarEmbarque" class="shipping-modal" aria-hidden="true">
+        <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloModalEditar">
+            <div class="modal-header"><div><p class="eyebrow">MODIFICAR REGISTRO</p><h2 id="tituloModalEditar">Editar embarque</h2></div><button id="cerrarEditarEmbarque" type="button" class="modal-close" aria-label="Cerrar">×</button></div>
+            <form id="formEditarEmbarque" method="post" class="load-form">
+                <input id="editarFecha" type="date" name="fecha" required>
+                <input id="editarProveedor" type="text" name="proveedor" required>
+                <input id="editarBarco" type="text" name="barco" required>
+                <input id="editarBultos" type="number" name="bultos" min="1" required>
+                <textarea id="editarDescripcion" name="descripcion" required></textarea>
+                <button type="submit">Guardar cambios</button>
+            </form>
+        </section>
+    </div>
+
+    <script src="/static/feedback.js"></script>
+    <script>
+        const filtroFecha = document.getElementById("filtroFecha");
+        const filtroDesde = document.getElementById("filtroDesde");
+        const filtroHasta = document.getElementById("filtroHasta");
+        const filtroProveedor = document.getElementById("filtroProveedor");
+        const exportarEmbarques = document.getElementById("exportarEmbarques");
+        const quitarFiltrosEmbarques = document.getElementById("quitarFiltrosEmbarques");
+        const tarjetas = document.querySelectorAll(".embarque-card");
+        const sinResultados = document.getElementById("sinResultados");
+        const modalEmbarque = document.getElementById("modalEmbarque");
+        const abrirCargaEmbarque = document.getElementById("abrirCargaEmbarque");
+        const cerrarCargaEmbarque = document.getElementById("cerrarCargaEmbarque");
+        const modalEditarEmbarque = document.getElementById("modalEditarEmbarque");
+        const formEditarEmbarque = document.getElementById("formEditarEmbarque");
+
+        function filtrarEmbarques() {
+            const fecha = filtroFecha.value;
+            const desde = filtroDesde.value;
+            const hasta = filtroHasta.value;
+            const consulta = filtroProveedor.value.trim().toLowerCase();
+            let visibles = 0;
+            tarjetas.forEach(function (tarjeta) {
+                const mostrar = (!fecha || tarjeta.dataset.fecha === fecha) && (!desde || tarjeta.dataset.fecha >= desde) && (!hasta || tarjeta.dataset.fecha <= hasta) && (!consulta || tarjeta.dataset.busqueda.toLowerCase().includes(consulta));
+                tarjeta.hidden = !mostrar;
+                if (mostrar) visibles += 1;
+            });
+            sinResultados.hidden = visibles !== 0;
+            exportarEmbarques.href = `/embarques/exportar?${new URLSearchParams({ fecha, fecha_desde: desde, fecha_hasta: hasta, consulta }).toString()}`;
+        }
+
+        function abrirModal() { modalEmbarque.classList.add("is-open"); modalEmbarque.setAttribute("aria-hidden", "false"); }
+        function cerrarModal() { modalEmbarque.classList.remove("is-open"); modalEmbarque.setAttribute("aria-hidden", "true"); }
+        function abrirEdicion(boton) { formEditarEmbarque.action = `/embarques/${boton.dataset.id}/actualizar`; document.getElementById("editarFecha").value = boton.dataset.fecha; document.getElementById("editarProveedor").value = boton.dataset.proveedor; document.getElementById("editarBarco").value = boton.dataset.barco; document.getElementById("editarBultos").value = boton.dataset.bultos; document.getElementById("editarDescripcion").value = boton.dataset.descripcion; modalEditarEmbarque.classList.add("is-open"); modalEditarEmbarque.setAttribute("aria-hidden", "false"); }
+        function cerrarEdicion() { modalEditarEmbarque.classList.remove("is-open"); modalEditarEmbarque.setAttribute("aria-hidden", "true"); }
+
+        filtroFecha.addEventListener("change", filtrarEmbarques);
+        filtroDesde.addEventListener("change", filtrarEmbarques);
+        filtroHasta.addEventListener("change", filtrarEmbarques);
+        filtroProveedor.addEventListener("input", filtrarEmbarques);
+        quitarFiltrosEmbarques.addEventListener("click", function () {
+            filtroFecha.value = "";
+            filtroDesde.value = "";
+            filtroHasta.value = "";
+            filtroProveedor.value = "";
+            filtrarEmbarques();
+        });
+        abrirCargaEmbarque.addEventListener("click", abrirModal);
+        cerrarCargaEmbarque.addEventListener("click", cerrarModal);
+        document.getElementById("cerrarEditarEmbarque").addEventListener("click", cerrarEdicion);
+        document.querySelectorAll("[data-editar-embarque]").forEach(function (boton) { boton.addEventListener("click", function () { abrirEdicion(boton); }); });
+        modalEmbarque.addEventListener("click", function (evento) { if (evento.target === modalEmbarque) cerrarModal(); });
+        modalEditarEmbarque.addEventListener("click", function (evento) { if (evento.target === modalEditarEmbarque) cerrarEdicion(); });
+        document.addEventListener("keydown", function (evento) { if (evento.key === "Escape") cerrarModal(); });
+
+        tarjetas.forEach(function (tarjeta) {
+            tarjeta.addEventListener("click", function (evento) {
+                if (!evento.target.closest("a, button, input, label, form")) window.location.href = tarjeta.dataset.detalle;
+            });
+        });
+    </script>
+    <script src="/static/date-picker.js"></script>
+</body>
+</html>

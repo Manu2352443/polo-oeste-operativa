@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polo Oeste | Empresas</title>
+    <link rel="stylesheet" href="/static/admin.css">
+    <link rel="stylesheet" href="/static/feedback.css">
+</head>
+<body>
+    <header class="admin-header">
+        <a href="/principal" class="admin-brand"><img class="brand-logo" src="/static/polo-oeste.svg" alt="Polo Oeste"></a>
+        <a href="/principal" class="back-link">&larr; Centro de operaciones</a>
+    </header>
+    <div class="config-layout">
+        <aside class="config-sidebar"><p>CONFIGURACIÓN</p><a href="/usuarios">Usuarios</a><a class="is-active" href="/configuracion/empresas">Empresas</a><a href="/configuracion/apariencia">Apariencia</a></aside>
+        <main class="admin-page">
+            <section class="admin-hero"><p>CONFIGURACIÓN</p><h1>Empresas operativas</h1><span>Administra los códigos que identifican cada operativa en el Trace de Stock. El selector superior de la plataforma usa esta lista.</span></section>
+            <section class="admin-section">
+                <div class="section-heading">
+                    <div><p>MAESTRO DE EMPRESAS</p><h2>Operativas disponibles</h2></div>
+                    <div class="section-tools"><span>Los códigos con movimientos importados se protegen.</span><button id="abrirCrearEmpresa" type="button" class="open-create-button">+ Nueva empresa</button></div>
+                </div>
+                <div class="admin-filter"><input id="filtroEmpresas" type="search" placeholder="Buscar por código o descripción" aria-label="Buscar empresa"></div>
+                <div class="records-scroll"><div id="listaEmpresas" class="records-list">
+                    {% for empresa in empresas %}
+                    <article class="company-record" data-busqueda="{{ empresa.codigo|lower }} {{ empresa.descripcion|lower }}">
+                        <span class="company-code">{{ empresa.codigo }}</span>
+                        <strong class="company-description">{{ empresa.descripcion }}</strong>
+                        <span class="company-data">{{ empresa.registros }} registro{% if empresa.registros != 1 %}s{% endif %} integrado{% if empresa.registros != 1 %}s{% endif %}</span>
+                        <form action="/configuracion/empresas/{{ empresa.codigo }}/eliminar" method="post" class="delete-form"><button class="delete-button" type="submit" {% if empresa.registros %}disabled title="La empresa tiene datos cargados"{% endif %}>Eliminar</button></form>
+                    </article>
+                    {% endfor %}
+                </div></div>
+            </section>
+        </main>
+    </div>
+    <div id="modalCrearEmpresa" class="admin-modal" aria-hidden="true">
+        <section class="admin-modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloCrearEmpresa">
+            <div class="modal-header"><div><p>NUEVA OPERATIVA</p><h2 id="tituloCrearEmpresa">Dar de alta empresa</h2></div><button type="button" class="modal-close" data-cerrar-modal aria-label="Cerrar">&times;</button></div>
+            <form action="/configuracion/empresas/crear" method="post" class="create-form">
+                <input type="text" name="codigo" inputmode="numeric" maxlength="20" placeholder="Código (ej. 6010)" required>
+                <input type="text" name="descripcion" maxlength="100" placeholder="Descripción" required>
+                <button type="submit">Crear empresa</button>
+            </form>
+        </section>
+    </div>
+    <script src="/static/feedback.js"></script>
+    <script>
+        const filtro = document.getElementById("filtroEmpresas");
+        filtro.addEventListener("input", function () { const texto = filtro.value.trim().toLowerCase(); document.querySelectorAll("#listaEmpresas .company-record").forEach(function (fila) { fila.hidden = !fila.dataset.busqueda.includes(texto); }); });
+        const modal = document.getElementById("modalCrearEmpresa");
+        document.getElementById("abrirCrearEmpresa").addEventListener("click", function () { modal.classList.add("is-open"); modal.setAttribute("aria-hidden", "false"); });
+        function cerrar() { modal.classList.remove("is-open"); modal.setAttribute("aria-hidden", "true"); }
+        modal.addEventListener("click", function (evento) { if (evento.target === modal) cerrar(); });
+        modal.querySelector("[data-cerrar-modal]").addEventListener("click", cerrar);
+        document.addEventListener("keydown", function (evento) { if (evento.key === "Escape") cerrar(); });
+    </script>
+</body>
+</html>

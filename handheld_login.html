@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polo Oeste | Handheld</title>
+    <meta name="theme-color" content="#101812">
+    <link rel="manifest" href="/static/handheld-manifest.webmanifest">
+    <link rel="stylesheet" href="/static/handheld.css">
+    <link rel="stylesheet" href="/static/feedback.css">
+</head>
+<body class="handheld-body">
+    <main class="handheld-login">
+        <section class="handheld-login-card">
+            <a class="handheld-logo" href="/handheld"><img src="/static/polo-oeste.svg" alt="Polo Oeste"></a>
+            <p class="handheld-eyebrow">OPERACIÓN EN HANDHELD</p>
+            <h1>Acceso de operario</h1>
+            <p class="handheld-subtitle">Identifícate para registrar actividad y controlar ingresos asignados.</p>
+
+            <form action="/handheld" method="post">
+                <label for="usuario">Usuario</label>
+                <input id="usuario" name="usuario" type="text" placeholder="Ingresa tu usuario" autocomplete="username" required autofocus>
+                <label for="contrasena">Contraseña</label>
+                <input id="contrasena" name="contrasena" type="password" placeholder="Ingresa tu contraseña" autocomplete="current-password" required>
+                <button type="submit" class="handheld-primary-button">Acceder</button>
+            </form>
+            <p class="handheld-help">Si no tienes acceso, comunícate con tu administrador.</p>
+        </section>
+    </main>
+    <script src="/static/feedback.js"></script>
+    <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js");</script>
+</body>
+</html>

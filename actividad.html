@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polo Oeste | Actividad</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/feedback.css">
+</head>
+<body class="principal-page">
+    <header class="main-banner activity-banner">
+        <div class="banner-top">
+            <a class="brand" href="/principal"><img class="brand-logo" src="/static/polo-oeste.svg" alt="Polo Oeste"></a>
+            <span class="system-live">Monitoreo en vivo</span>
+        </div>
+        <div class="banner-content">
+            <p class="eyebrow">SEGUIMIENTO OPERATIVO</p>
+            <h1>Actividad de funcionarios</h1>
+            <p>Consulta el estado, el tiempo activo y el historial operativo de cada equipo.</p>
+        </div>
+    </header>
+
+    <div class="company-strip"><form action="/empresa/seleccionar" method="post"><span>OPERATIVA</span><input type="hidden" name="volver" value="/actividad"><select name="empresa_codigo" onchange="this.form.submit()"><option value="">Todas las empresas</option>{% for empresa in empresas_menu %}<option value="{{ empresa.codigo }}" {% if empresa.codigo == empresa_seleccionada %}selected{% endif %}>{{ empresa.codigo }} · {{ empresa.descripcion }}</option>{% endfor %}</select></form></div>
+    <nav class="tool-bar" aria-label="Módulos del sistema">
+        <a href="/principal" class="tool-item">Inicio</a>
+        <a href="/actividad" class="tool-item active">Actividad</a>
+        <a href="/embarques" class="tool-item">Embarques</a>
+        <a href="/metricas" class="tool-item">Métricas</a>
+        <a href="/organizador" class="tool-item">Organizador</a>
+        <a href="/configuracion" class="tool-item">Configuración</a>
+    </nav>
+
+    <main class="main-content">
+        <section class="activity-table-card">
+            <div class="table-header">
+                <div>
+                    <p class="eyebrow">REGISTRO OPERATIVO</p>
+                    <h2>Actividad registrada</h2>
+                </div>
+                <div class="table-tools">
+                    <div class="table-actions">
+                        <label class="date-filter" for="filtroFecha">FECHA ÚNICA
+                            <input id="filtroFecha" type="date">
+                        </label>
+                        <label class="date-filter" for="filtroDesde">DESDE
+                            <input id="filtroDesde" type="date">
+                        </label>
+                        <label class="date-filter" for="filtroHasta">HASTA
+                            <input id="filtroHasta" type="date">
+                        </label>
+                        <label class="date-filter" for="filtroFuncionario">FUNCIONARIO
+                            <input id="filtroFuncionario" type="search" placeholder="Nombre">
+                        </label>
+                        <label class="date-filter" for="filtroConsulta">BUSCAR
+                            <input id="filtroConsulta" type="search" placeholder="Estado o colector">
+                        </label>
+                        <button id="quitarFiltroActividad" type="button" class="filter-button">Quitar filtros</button>
+                        <a id="botonExportar" class="export-button" href="/actividad/exportar-filtrado">Exportar Excel</a>
+                    </div>
+                    <span class="table-status"><span id="puntoEstado" class="status-dot"></span><span id="resumenEstado">Actualizando…</span></span>
+                </div>
+            </div>
+            <div class="table-scroll">
+                <table class="excel-table">
+                    <thead><tr><th>Fecha</th><th>Funcionario</th><th>Status</th><th>Tiempo</th><th>Colector</th><th>Acciones</th></tr></thead>
+                    <tbody id="tablaActividad"><tr><td colspan="6" class="empty-table">Cargando registros…</td></tr></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="/static/feedback.js"></script>
+    <script src="/static/table-sort.js"></script>
+    <script>
+        const tablaActividad = document.getElementById("tablaActividad");
+        const resumenEstado = document.getElementById("resumenEstado");
+        const puntoEstado = document.getElementById("puntoEstado");
+        const filtroFecha = document.getElementById("filtroFecha");
+        const filtroDesde = document.getElementById("filtroDesde");
+        const filtroHasta = document.getElementById("filtroHasta");
+        const filtroFuncionario = document.getElementById("filtroFuncionario");
+        const filtroConsulta = document.getElementById("filtroConsulta");
+        const quitarFiltroActividad = document.getElementById("quitarFiltroActividad");
+        const botonExportar = document.getElementById("botonExportar");
+
+        function crearCelda(texto) { const celda = document.createElement("td"); celda.textContent = texto; return celda; }
+        function mostrarMensaje(texto) { tablaActividad.innerHTML = `<tr><td colspan="6" class="empty-table">${texto}</td></tr>`; }
+        function parametrosFiltro() {
+            return new URLSearchParams({
+                fecha: filtroFecha.value,
+                fecha_desde: filtroDesde.value,
+                fecha_hasta: filtroHasta.value,
+                funcionario: filtroFuncionario.value,
+                consulta: filtroConsulta.value
+            });
+        }
+        function actualizarEnlaceExportar() { botonExportar.href = `/actividad/exportar-filtrado?${parametrosFiltro().toString()}`; }
+        function crearAccionEliminar(id) {
+            const celda = document.createElement("td");
+            const formulario = document.createElement("form");
+            formulario.action = `/actividad/${id}/eliminar`;
+            formulario.method = "post";
+            formulario.className = "record-delete-form";
+            const boton = document.createElement("button");
+            boton.type = "submit";
+            boton.className = "record-delete-button";
+            boton.textContent = "Eliminar";
+            formulario.appendChild(boton);
+            celda.appendChild(formulario);
+            return celda;
+        }
+        function mostrarRegistros(registros) {
+            tablaActividad.innerHTML = "";
+            if (!registros.length) return mostrarMensaje("No hay actividades para la fecha seleccionada.");
+            registros.forEach(function (registro) {
+                const fila = document.createElement("tr");
+                fila.append(crearCelda(registro.fecha), crearCelda(registro.funcionario), crearCelda(registro.status), crearCelda(registro.tiempo), crearCelda(registro.colector), crearAccionEliminar(registro.id));
+                tablaActividad.appendChild(fila);
+            });
+            if (window.PoloOesteTables) PoloOesteTables.refrescar(tablaActividad.closest("table"));
+        }
+        async function actualizarTabla() {
+            try {
+                const respuesta = await fetch(`/api/actividad/registros?${parametrosFiltro().toString()}`, { cache: "no-store" });
+                if (!respuesta.ok) throw new Error();
+                const datos = await respuesta.json();
+                resumenEstado.textContent = datos.resumen === "En operacion" ? "Operación activa" : "Sin actividad";
+                puntoEstado.style.background = datos.resumen === "En operacion" ? "#76be49" : "#657168";
+                puntoEstado.style.boxShadow = datos.resumen === "En operacion" ? "0 0 11px rgba(118,190,73,.8)" : "none";
+                mostrarRegistros(datos.registros);
+            } catch (error) {
+                resumenEstado.textContent = "Sin conexión";
+                puntoEstado.style.background = "#e36c67";
+                mostrarMensaje("No se pudo actualizar la información.");
+            }
+        }
+        actualizarEnlaceExportar();
+        [filtroFecha, filtroDesde, filtroHasta].forEach(function (campo) { campo.addEventListener("change", function () { actualizarEnlaceExportar(); actualizarTabla(); }); });
+        [filtroFuncionario, filtroConsulta].forEach(function (campo) { campo.addEventListener("input", function () { actualizarEnlaceExportar(); actualizarTabla(); }); });
+        quitarFiltroActividad.addEventListener("click", function () {
+            filtroFecha.value = "";
+            filtroDesde.value = "";
+            filtroHasta.value = "";
+            filtroFuncionario.value = "";
+            filtroConsulta.value = "";
+            actualizarEnlaceExportar();
+            actualizarTabla();
+        });
+        actualizarTabla();
+        setInterval(actualizarTabla, 5000);
+    </script>
+    <script src="/static/date-picker.js"></script>
+</body>
+</html>

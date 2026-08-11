@@ -1,0 +1,18 @@
+{
+  "name": "Polo Oeste Handheld",
+  "short_name": "PO Handheld",
+  "start_url": "/handheld",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#101812",
+  "theme_color": "#101812",
+  "description": "Actividad y control de ingresos de Polo Oeste.",
+  "icons": [
+    {
+      "src": "/static/polo-oeste.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

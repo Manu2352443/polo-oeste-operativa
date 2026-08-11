@@ -1,0 +1,104 @@
+.embarques-page, .articulos-page { width: min(100%, 1110px); margin: 0 auto; padding: 37px 24px 72px; }
+.nuevo-embarque, .lista-embarques, .articulos-table { margin-bottom: 20px; padding: 24px; border: 1px solid var(--line); border-radius: 14px; background: linear-gradient(145deg, #1b241c, #141b15); box-shadow: var(--shadow); }
+.nuevo-embarque h2, .lista-embarques h2, .articulos-page h1 { margin: 0; }
+.nuevo-embarque form { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin-top: 19px; }
+.nuevo-embarque input, .nuevo-embarque textarea, .filters input { width: 100%; margin: 0; padding: 12px; border: 1px solid #3b4b3f; border-radius: 8px; outline: none; background: #0e150f; color: var(--text); font: inherit; font-size: 13px; }
+.nuevo-embarque textarea, .nuevo-embarque button { grid-column: span 2; }
+.nuevo-embarque textarea { min-height: 90px; resize: vertical; }
+.nuevo-embarque button, .embarque-actions button { padding: 12px; border: 1px solid #84ce5e; border-radius: 8px; background: linear-gradient(135deg, #9bdb72, #72ba47); color: #091009; cursor: pointer; font: inherit; font-size: 12px; font-weight: 800; }
+.section-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.open-load-button { min-height: 40px; padding: 0 14px; border: 1px solid #83ce5c; border-radius: 8px; background: linear-gradient(135deg, #9cdd73, #71ba46); color: #0a1109; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.filters { display: grid; grid-template-columns: repeat(3, minmax(145px, .65fr)) minmax(205px, 1.25fr) auto auto; gap: 9px; margin: 19px 0; }
+.shipment-date-filter { display: grid; gap: 5px; color: var(--muted); font-family: "DM Mono", monospace; font-size: 9px; letter-spacing: .45px; }
+.shipment-date-filter input { min-height: 42px; margin: 0; }
+.shipping-records-scroll { max-height: 530px; overflow-y: auto; padding-right: 7px; scrollbar-color: #5b765f #182119; scrollbar-width: thin; }
+.shipping-records-scroll::-webkit-scrollbar { width: 8px; }
+.shipping-records-scroll::-webkit-scrollbar-track { background: #182119; border-radius: 999px; }
+.shipping-records-scroll::-webkit-scrollbar-thumb { background: #526c56; border-radius: 999px; }
+.embarque-card { display: flex; align-items: start; justify-content: space-between; gap: 20px; margin-top: 12px; padding: 18px; border: 1px solid #344139; border-radius: 11px; background: #182119; cursor: pointer; transition: border-color .18s, transform .18s, background .18s; }
+.embarque-card:hover { border-color: #66925d; background: #1d291f; transform: translateY(-1px); }
+.embarque-card[hidden] { display: none; }
+.embarque-info h3 { margin: 10px 0 7px; font-size: 16px; letter-spacing: -.35px; }
+.embarque-info p, .detail-description { margin: 6px 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.shipping-trace { display: flex; flex-wrap: wrap; gap: 7px 14px; margin-top: 13px; padding-top: 11px; border-top: 1px solid var(--line-soft); }
+.shipping-trace span { color: #cad6cc; font-family: "DM Mono", monospace; font-size: 12px; }
+.shipping-trace strong { color: var(--green-light); font-size: 13px; font-weight: 700; }
+.embarque-actions { display: grid; gap: 8px; min-width: 200px; }
+.embarque-actions form { display: grid; gap: 8px; }
+.embarque-actions a { display: grid; min-height: 42px; place-items: center; padding: 10px; border: 1px solid #4c5d4f; border-radius: 8px; color: #dce8de; font-size: 11px; font-weight: 800; text-align: center; text-decoration: none; }
+.embarque-actions a:hover { border-color: var(--green); background: rgba(118,190,73,.1); }
+.file-label { padding: 9px; border: 1px dashed #586e5c; border-radius: 8px; color: #bfcbbf; font-size: 10px; }
+.file-label input { display: block; width: 100%; margin-top: 5px; color: #d9e5da; font-size: 10px; }
+.finish-button { border-color: #d7ae45 !important; background: linear-gradient(135deg, #f1cf68, #d8ad42) !important; }
+.shipment-delete-button { min-height: 42px; border: 1px solid #804845 !important; background: transparent !important; color: #ffaaa5 !important; font-size: 11px !important; }
+.shipment-delete-button:hover { border-color: var(--danger) !important; background: rgba(227, 108, 103, .11) !important; }
+.edit-shipment-button { min-height: 42px; border: 1px solid #536c57 !important; background: #263429 !important; color: #d9e8db !important; font-size: 11px !important; }
+.edit-shipment-button:hover { border-color: #91ca70 !important; background: #314235 !important; }
+.estado { display: inline-block; padding: 5px 8px; border: 1px solid #526255; border-radius: 999px; background: #273229; color: #cedad0; font-family: "DM Mono", monospace; font-size: 9px; letter-spacing: .4px; }
+.estado-proximo { border-color: rgba(226,185,75,.55); background: rgba(226,185,75,.15); color: #ffe394; }
+.estado-en-proceso { border-color: rgba(118,190,73,.55); background: rgba(118,190,73,.15); color: #c5efaa; }
+.estado-finalizado { border-color: #57645a; background: rgba(157,172,160,.12); color: #c3cec5; }
+.empty-shipping { color: var(--muted); }
+.back-link { display: inline-flex; margin-bottom: 25px; color: #c6ecc0; font-size: 12px; font-weight: 800; text-decoration: none; }
+.back-link:hover { color: var(--green-light); }
+.articulos-page h1 { font-size: 30px; letter-spacing: -1.2px; }
+.articulos-table { margin-top: 22px; }
+.articulos-table p { padding: 11px 0; margin: 0; border-bottom: 1px solid var(--line-soft); color: var(--muted); font-size: 13px; }
+.articulos-table p strong { display: inline-block; min-width: 165px; color: #e4eee5; }
+.download-articles { margin-top: 18px; }
+
+.shipping-modal { position: fixed; z-index: 100; inset: 0; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(4, 8, 5, .66); backdrop-filter: blur(5px); }
+.shipping-modal.is-open { display: flex; }
+.modal-card { width: min(100%, 690px); max-height: min(90vh, 700px); overflow-y: auto; padding: 24px; border: 1px solid #4b614f; border-radius: 15px; background: linear-gradient(145deg, #202b22, #121a13); box-shadow: 0 28px 75px rgba(0, 0, 0, .55); }
+.modal-header { display: flex; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 19px; }
+.modal-header h2 { margin: 0; font-size: 23px; letter-spacing: -.8px; }
+.modal-close { display: grid; width: 34px; min-height: 34px; place-items: center; padding: 0; border: 1px solid #4b5c4e; border-radius: 8px; background: #263128; color: #dce9de; font-size: 21px; line-height: 1; }
+.modal-close:hover { border-color: #8dc966; background: #314033; }
+.load-form { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+.load-form input, .load-form textarea { margin: 0; }
+.load-form textarea, .load-form button { grid-column: span 2; }
+.load-form button { justify-self: stretch; }
+.control-banner { min-height: 246px; }
+.control-page { max-width: 1180px; }
+.control-start-card, .control-workspace, .control-table-card { margin-bottom: 18px; padding: 23px; border: 1px solid var(--line); border-radius: 14px; background: linear-gradient(145deg, #1b241c, #141b15); box-shadow: var(--shadow); }
+.control-start-card { display: flex; align-items: end; justify-content: space-between; gap: 24px; }
+.control-start-card h2, .scan-card h2, .control-info-card h2 { margin: 0; font-size: 20px; letter-spacing: -.6px; }
+.control-start-card p:not(.eyebrow), .control-info-card > p:not(.eyebrow), .scan-message { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.control-start-card form { display: flex; align-items: end; gap: 9px; min-width: min(100%, 450px); }
+.control-start-card label, .scan-card label { display: grid; flex: 1; gap: 5px; margin: 0; color: var(--muted); font-family: "DM Mono", monospace; font-size: 9px; letter-spacing: .5px; }
+.control-start-card select { min-width: 240px; min-height: 42px; margin: 0; }
+.control-start-card button { min-height: 42px; white-space: nowrap; }
+.control-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 18px; }
+.control-summary-card { position: relative; overflow: hidden; min-height: 130px; padding: 19px; border: 1px solid var(--line); border-radius: 13px; background: linear-gradient(145deg, #1c261e, #141b15); box-shadow: var(--shadow); }
+.control-summary-card::after { position: absolute; right: -24px; bottom: -38px; width: 110px; height: 110px; border: 1px solid rgba(150, 216, 113, .16); border-radius: 50%; content: ""; }
+.control-summary-card > span { display: block; color: var(--muted); font-family: "DM Mono", monospace; font-size: 9px; letter-spacing: .7px; }
+.control-summary-card > strong { position: relative; z-index: 1; display: block; margin-top: 13px; color: #e8f1e8; font-size: 26px; letter-spacing: -1.2px; }
+.control-summary-card small { position: relative; z-index: 1; display: block; margin-top: 6px; color: #a7b5a8; font-size: 11px; }
+.control-progress { position: relative; z-index: 1; height: 8px; overflow: hidden; margin-top: 15px; border-radius: 999px; background: #0e140f; }
+.control-progress i { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #77bd4b, #b3e58f); transition: width .35s ease; }
+.control-workspace { display: grid; grid-template-columns: 1.15fr .85fr; gap: 20px; }
+.scan-card, .control-info-card { padding: 4px; }
+.scan-card form { display: grid; grid-template-columns: 1fr 120px auto; align-items: end; gap: 9px; margin-top: 17px; }
+.scan-card input { min-height: 43px; margin: 0; }
+.scan-card button { min-height: 43px; white-space: nowrap; }
+.scan-message { min-height: 20px; margin: 12px 0 0; }
+.scan-message--ok { color: #bceda6; }
+.scan-message--error { color: #ffaaa4; }
+.control-info-card { display: flex; flex-direction: column; }
+.control-info-card .finish-button { width: 100%; margin-top: auto; }
+.control-table-card { padding: 0; overflow: hidden; }
+.control-table-card .table-header { padding: 20px 23px; }
+.control-table-actions { display: flex; align-items: center; gap: 10px; }
+.connection-beacon { position: fixed; right: 20px; bottom: 18px; z-index: 160; display: inline-flex; align-items: center; gap: 7px; padding: 8px 10px; border: 1px solid #48624d; border-radius: 999px; background: rgba(18,28,19,.92); color: #c8e9bb; font-family: "DM Mono", monospace; font-size: 10px; white-space: nowrap; box-shadow: 0 10px 28px rgba(0,0,0,.35); }
+.connection-beacon i { width: 8px; height: 8px; border-radius: 50%; background: #76be49; box-shadow: 0 0 11px #76be49; animation: connection-blink 1.5s ease-in-out infinite; }
+.connection-beacon.is-offline { color: #ffb1ac; }.connection-beacon.is-offline i { background: var(--danger); box-shadow: 0 0 11px var(--danger); animation: none; }
+.control-movements-card { margin-top: 18px; }
+.movement-action, .movement-delete { min-height: 29px; margin: 2px; padding: 0 8px; border-radius: 6px; font-size: 10px; font-weight: 800; }.movement-action { border: 1px solid #58745c; background: #263429; color: #d8e9da; }.movement-delete { border: 1px solid #804845; background: transparent; color: #ffaaa5; }
+.control-confirm-modal { position: fixed; z-index: 150; inset: 0; display: none; place-items: center; padding: 20px; background: rgba(4,8,5,.72); backdrop-filter: blur(5px); }.control-confirm-modal.is-open { display: grid; }.control-confirm-card { width: min(100%,440px); padding: 25px; border: 1px solid #6b6747; border-radius: 15px; background: linear-gradient(145deg,#25281e,#151a13); box-shadow: 0 30px 80px rgba(0,0,0,.55); }.control-confirm-card h2 { margin: 0; font-size: 23px; }.control-confirm-card > p:not(.eyebrow) { margin: 12px 0 22px; color: #c7d0c5; font-size: 13px; line-height: 1.55; }.control-confirm-actions { display: flex; justify-content: end; gap: 9px; }.control-confirm-actions .finish-button { min-height: 38px; padding: 0 12px; }
+@keyframes connection-blink { 50% { opacity: .3; transform: scale(.75); } }
+.control-table-scroll { max-height: 520px; }
+.control-status { display: inline-flex; padding: 4px 7px; border: 1px solid #685f46; border-radius: 999px; background: rgba(183, 150, 68, .13); color: #efdb99; font-size: 10px; font-weight: 800; }
+.control-status--ok { border-color: #4c7c3e; background: rgba(118, 190, 73, .12); color: #c8eeaf; }
+.control-status--alert { border-color: #8a4b47; background: rgba(227, 108, 103, .12); color: #ffb3ae; }
+
+@media (max-width: 700px) { .embarques-page, .articulos-page { padding: 30px 15px 55px; } .nuevo-embarque, .lista-embarques, .articulos-table, .control-start-card, .control-workspace { padding: 18px; } .section-row, .control-start-card { align-items: start; flex-direction: column; } .filters { grid-template-columns: 1fr; } .shipping-records-scroll { max-height: 590px; } .embarque-card { flex-direction: column; } .embarque-actions { width: 100%; } .articulos-table p strong { display: block; margin-bottom: 4px; } .modal-card { padding: 19px; } .load-form { grid-template-columns: 1fr; } .load-form textarea, .load-form button { grid-column: auto; } .control-summary-grid, .control-workspace { grid-template-columns: 1fr; } .control-start-card form, .scan-card form { width: 100%; min-width: 0; grid-template-columns: 1fr; flex-direction: column; } .control-start-card select { min-width: 0; } .control-table-actions { width: 100%; align-items: start; flex-direction: column; } }

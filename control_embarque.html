@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polo Oeste | Control de ingreso</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/embarques.css">
+    <link rel="stylesheet" href="/static/feedback.css">
+</head>
+<body class="principal-page">
+    <header class="main-banner activity-banner control-banner">
+        <div class="banner-top">
+            <a class="brand" href="/principal"><img class="brand-logo" src="/static/polo-oeste.svg" alt="Polo Oeste"></a>
+            <a class="back-button" href="/embarques/{{ embarque.id }}/detalle">← Detalle de embarque</a>
+        </div>
+        <div class="banner-content">
+            <p class="eyebrow">CONTROL DE INGRESO</p>
+            <h1>{{ embarque.proveedor }} · {{ embarque.barco }}</h1>
+            <p>Registra SKU y cantidades. El avance se actualiza automáticamente cada cinco segundos.</p>
+        </div>
+    </header>
+
+    <div class="company-strip"><form action="/empresa/seleccionar" method="post"><span>OPERATIVA</span><input type="hidden" name="volver" value="/embarques/{{ embarque.id }}/control"><select name="empresa_codigo" onchange="this.form.submit()"><option value="">Todas las empresas</option>{% for empresa in empresas_menu %}<option value="{{ empresa.codigo }}" {% if empresa.codigo == empresa_seleccionada %}selected{% endif %}>{{ empresa.codigo }} · {{ empresa.descripcion }}</option>{% endfor %}</select></form></div>
+    <nav class="tool-bar" aria-label="Módulos del sistema">
+        <a href="/principal" class="tool-item">Inicio</a>
+        <a href="/actividad" class="tool-item">Actividad</a>
+        <a href="/embarques" class="tool-item active">Embarques</a>
+        <a href="/metricas" class="tool-item">Métricas</a>
+        <a href="/organizador" class="tool-item">Organizador</a>
+        <a href="/configuracion" class="tool-item">Configuración</a>
+    </nav>
+
+    <main class="embarques-page control-page" data-embarque="{{ embarque.id }}">
+        {% if mensaje %}<div class="feedback-message feedback-message--success">✓ {{ mensaje }}</div>{% endif %}
+
+        {% if not control or control['estado'] == 'Pendiente' %}
+        <section class="control-start-card">
+            <div><p class="eyebrow">ASIGNACIÓN OPERATIVA</p><h2>Asignar colector para comenzar</h2><p>El colector seleccionado quedará asociado al control de este embarque.</p></div>
+            <form action="/embarques/{{ embarque.id }}/control/iniciar" method="post">
+                <label for="colectorId">COLECTOR
+                    <select id="colectorId" name="colector_id" required>
+                        <option value="">Selecciona un colector</option>
+                        {% for colector in colectores %}<option value="{{ colector.id }}">{{ colector.numero }} · {{ colector.descripcion }}</option>{% endfor %}
+                    </select>
+                </label>
+                <label for="usuarioControl">OPERARIO ASIGNADO
+                    <select id="usuarioControl" name="usuario_id" required>
+                        <option value="">Selecciona un operario</option>
+                        {% for funcionario in funcionarios %}<option value="{{ funcionario.id }}">{{ funcionario.nombre_funcionario }} · {{ funcionario.usuario }}</option>{% endfor %}
+                    </select>
+                </label>
+                <button type="submit">Iniciar control <span>→</span></button>
+            </form>
+        </section>
+        {% else %}
+        <section class="control-summary-grid">
+            <article class="control-summary-card"><span>COLECTOR ASIGNADO</span><strong id="controlColector">{{ control['colector_numero'] or 'Sin asignar' }}</strong><small id="controlEstado">{{ control['estado'] }}</small></article>
+            <article class="control-summary-card"><span>UNIDADES CONTROLADAS</span><strong id="controlUnidades">0</strong><small>Sobre <span id="controlProgramadas">0</span> programadas</small></article>
+            <article class="control-summary-card"><span>AVANCE DEL CONTROL</span><strong id="controlPorcentaje">0%</strong><div class="control-progress"><i id="barraControl"></i></div></article>
+        </section>
+
+        <section class="control-workspace">
+            <article class="scan-card">
+                <p class="eyebrow">REGISTRO OPERATIVO</p>
+                <h2>Ingresar lectura</h2>
+                {% if control['estado'] == 'En control' %}
+                <form id="formRegistroControl">
+                    <label for="skuControl">SKU
+                        <input id="skuControl" name="sku" type="text" autocomplete="off" placeholder="Escanea o escribe el SKU" autofocus required>
+                    </label>
+                    <label for="cantidadControl">CANTIDAD
+                        <input id="cantidadControl" name="cantidad" type="number" min="0.01" step="0.01" value="1" required>
+                    </label>
+                    <button type="submit">Registrar cantidad</button>
+                </form>
+                <p id="mensajeControl" class="scan-message">Listo para registrar movimiento.</p>
+                {% else %}
+                <p class="scan-message">El control está finalizado. La información queda disponible para consulta.</p>
+                {% endif %}
+            </article>
+
+            <article class="control-info-card">
+                <p class="eyebrow">SEGUIMIENTO EN VIVO</p>
+                <h2>Estado de artículos</h2>
+                <p>Las diferencias se muestran por cada SKU para facilitar el control físico.</p>
+                {% if control['estado'] == 'En control' %}
+                <form id="formFinalizarControl" action="/embarques/{{ embarque.id }}/control/finalizar" method="post"><button class="finish-button" type="submit">Finalizar control</button></form>
+                {% endif %}
+            </article>
+        </section>
+
+        <section class="control-table-card">
+            <div class="table-header"><div><p class="eyebrow">ARTÍCULOS DEL EMBARQUE</p><h2>Control de cantidades</h2></div><div class="control-table-actions"><a class="export-button" href="/embarques/{{ embarque.id }}/control/exportar">Exportar Excel</a><span id="estadoConexion" class="connection-beacon"><i></i> En línea</span></div></div>
+            <div class="table-scroll control-table-scroll">
+                <table class="excel-table"><thead><tr><th>SKU</th><th>Descripción</th><th>Programada</th><th>Controlada</th><th>Diferencia</th><th>Estado</th></tr></thead><tbody id="tablaControl"><tr><td colspan="6" class="empty-table">Cargando control…</td></tr></tbody></table>
+            </div>
+        </section>
+        <section class="control-table-card control-movements-card">
+            <div class="table-header"><div><p class="eyebrow">REGISTROS GENERADOS</p><h2>Movimientos de control</h2></div></div>
+            <div class="table-scroll control-table-scroll"><table class="excel-table"><thead><tr><th>Hora</th><th>SKU</th><th>Descripción</th><th>Cantidad</th><th>Acciones</th></tr></thead><tbody id="tablaMovimientos"><tr><td colspan="5" class="empty-table">Aún no se registraron movimientos.</td></tr></tbody></table></div>
+        </section>
+        {% endif %}
+    </main>
+
+    <div id="modalFinalizarControl" class="control-confirm-modal" aria-hidden="true"><div class="control-confirm-card"><p class="eyebrow">CONFIRMAR CIERRE</p><h2>¿Cerrar la operación?</h2><p id="detalleDiferencias"></p><div class="control-confirm-actions"><button id="cancelarFinalizacion" type="button" class="filter-button">Volver</button><button id="confirmarFinalizacion" type="button" class="finish-button">Finalizar control</button></div></div></div>
+
+    <script src="/static/feedback.js"></script>
+    <script src="/static/table-sort.js"></script>
+    <script>
+        const raiz = document.querySelector('.control-page');
+        const embarqueId = raiz.dataset.embarque;
+        const tabla = document.getElementById('tablaControl');
+        const form = document.getElementById('formRegistroControl');
+        const mensaje = document.getElementById('mensajeControl');
+        const tablaMovimientos = document.getElementById('tablaMovimientos');
+        const estadoConexion = document.getElementById('estadoConexion');
+
+        function numero(valor) { return Number(valor || 0).toLocaleString('es-UY', { maximumFractionDigits: 2 }); }
+        function actualizarTabla(articulos) {
+            tabla.innerHTML = '';
+            articulos.forEach(function (articulo) {
+                const diferencia = Number(articulo.diferencia || 0);
+                const estado = diferencia === 0 ? 'Completo' : diferencia < 0 ? 'Pendiente' : 'Excedido';
+                const clase = diferencia === 0 ? 'control-status--ok' : diferencia < 0 ? 'control-status--pending' : 'control-status--alert';
+                const fila = document.createElement('tr');
+                fila.innerHTML = `<td>${articulo.sku}</td><td>${articulo.descripcion}</td><td>${numero(articulo.programada)}</td><td>${numero(articulo.controlada)}</td><td>${numero(diferencia)}</td><td><span class="control-status ${clase}">${estado}</span></td>`;
+                tabla.appendChild(fila);
+            });
+            if (window.PoloOesteTables) PoloOesteTables.refrescar(tabla.closest('table'));
+        }
+        function actualizarMovimientos(movimientos) {
+            tablaMovimientos.innerHTML = '';
+            if (!movimientos.length) { tablaMovimientos.innerHTML = '<tr><td colspan="5" class="empty-table">Aún no se registraron movimientos.</td></tr>'; return; }
+            movimientos.forEach(function (movimiento) {
+                const fila = document.createElement('tr');
+                fila.innerHTML = `<td>${movimiento.registrado_en}</td><td>${movimiento.sku}</td><td>${movimiento.descripcion}</td><td>${numero(movimiento.cantidad)}</td><td><button type="button" class="movement-action" data-editar="${movimiento.id}" data-cantidad="${movimiento.cantidad}">Modificar</button><button type="button" class="movement-delete" data-eliminar="${movimiento.id}">Eliminar</button></td>`;
+                tablaMovimientos.appendChild(fila);
+            });
+            if (window.PoloOesteTables) PoloOesteTables.refrescar(tablaMovimientos.closest('table'));
+            tablaMovimientos.querySelectorAll('[data-editar]').forEach(boton => boton.onclick = () => editarMovimiento(boton.dataset.editar, boton.dataset.cantidad));
+            tablaMovimientos.querySelectorAll('[data-eliminar]').forEach(boton => boton.onclick = () => eliminarMovimiento(boton.dataset.eliminar));
+        }
+        async function actualizarControl() {
+            try {
+                const respuesta = await fetch(`/api/embarques/${embarqueId}/control`, { cache: 'no-store' });
+                if (!respuesta.ok) throw new Error();
+                const datos = await respuesta.json();
+                if (!datos.control) return;
+                document.getElementById('controlColector').textContent = datos.control.colector;
+                document.getElementById('controlEstado').textContent = datos.control.estado;
+                document.getElementById('controlUnidades').textContent = numero(datos.control.controladas);
+                document.getElementById('controlProgramadas').textContent = numero(datos.control.programadas);
+                document.getElementById('controlPorcentaje').textContent = `${datos.control.porcentaje}%`;
+                document.getElementById('barraControl').style.width = `${Math.min(100, datos.control.porcentaje)}%`;
+                actualizarTabla(datos.articulos);
+                actualizarMovimientos(datos.movimientos || []);
+                estadoConexion.classList.remove('is-offline'); estadoConexion.innerHTML = '<i></i> En línea';
+            } catch (error) { estadoConexion.classList.add('is-offline'); estadoConexion.innerHTML = '<i></i> Sin conexión'; tabla.innerHTML = '<tr><td colspan="6" class="empty-table">No se pudo actualizar el control.</td></tr>'; }
+        }
+        async function editarMovimiento(id, actual) { const cantidad = window.prompt('Nueva cantidad registrada:', actual); if (cantidad === null) return; const r = await fetch(`/api/embarques/${embarqueId}/control/movimientos/${id}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({cantidad}) }); const d = await r.json(); mensaje.textContent = d.mensaje; mensaje.className = d.ok ? 'scan-message scan-message--ok' : 'scan-message scan-message--error'; if (d.ok) actualizarControl(); }
+        async function eliminarMovimiento(id) { if (!window.confirm('¿Eliminar este registro de cantidad?')) return; const r = await fetch(`/api/embarques/${embarqueId}/control/movimientos/${id}`, { method: 'DELETE' }); const d = await r.json(); mensaje.textContent = d.mensaje; mensaje.className = d.ok ? 'scan-message scan-message--ok' : 'scan-message scan-message--error'; if (d.ok) actualizarControl(); }
+        if (tabla) { actualizarControl(); setInterval(actualizarControl, 5000); }
+        if (form) form.addEventListener('submit', async function (evento) {
+            evento.preventDefault();
+            const datos = Object.fromEntries(new FormData(form).entries());
+            const respuesta = await fetch(`/api/embarques/${embarqueId}/control/registrar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
+            const resultado = await respuesta.json();
+            mensaje.textContent = resultado.mensaje;
+            mensaje.className = resultado.ok ? 'scan-message scan-message--ok' : 'scan-message scan-message--error';
+            if (resultado.ok) { form.reset(); document.getElementById('cantidadControl').value = '1'; document.getElementById('skuControl').focus(); actualizarControl(); }
+        });
+        const formFinalizar = document.getElementById('formFinalizarControl');
+        if (formFinalizar) formFinalizar.addEventListener('submit', async function (evento) { evento.preventDefault(); const r = await fetch(`/api/embarques/${embarqueId}/control`, { cache: 'no-store' }); const d = await r.json(); const diferencias = (d.articulos || []).filter(a => Number(a.diferencia) !== 0); const unidades = diferencias.reduce((total, a) => total + Math.abs(Number(a.diferencia)), 0); document.getElementById('detalleDiferencias').textContent = diferencias.length ? `Existen ${diferencias.length} SKU con diferencias, por un total de ${numero(unidades)} unidades. ¿Estás seguro que deseas cerrar la operación?` : 'No hay diferencias registradas. ¿Estás seguro que deseas cerrar la operación?'; document.getElementById('modalFinalizarControl').classList.add('is-open'); });
+        document.getElementById('cancelarFinalizacion').onclick = () => document.getElementById('modalFinalizarControl').classList.remove('is-open');
+        document.getElementById('confirmarFinalizacion').onclick = () => { if (formFinalizar) HTMLFormElement.prototype.submit.call(formFinalizar); };
+    </script>
+</body>
+</html>

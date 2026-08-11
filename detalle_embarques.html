@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polo Oeste | Detalle de embarque</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/embarques.css">
+    <link rel="stylesheet" href="/static/feedback.css">
+</head>
+<body class="principal-page">
+    <header class="main-banner activity-banner">
+        <div class="banner-top"><a class="brand" href="/principal"><img class="brand-logo" src="/static/polo-oeste.svg" alt="Polo Oeste"></a><span class="system-live">Detalle logístico</span></div>
+        <div class="banner-content"><p class="eyebrow">EMBARQUES</p><h1>Detalle de ingreso</h1><p>Información registrada y trazabilidad de artículos.</p></div>
+    </header>
+    <main class="articulos-page">
+        <a href="/embarques" class="back-link">← Volver a embarques</a>
+        <p class="eyebrow">DETALLE DE EMBARQUE</p>
+        <h1>{{ embarque.proveedor }} · {{ embarque.barco }}</h1>
+        <section class="articulos-table">
+            <p><strong>Estado</strong> {{ embarque.estado }}</p>
+            <p><strong>Fecha tentativa</strong> {{ embarque.fecha }}</p>
+            <p><strong>Confirmado</strong> {{ embarque.confirmado_en|fecha_hora }}</p>
+            <p><strong>Finalizado</strong> {{ embarque.finalizado_en|fecha_hora }}</p>
+            <p><strong>Cantidad de bultos</strong> {{ embarque.bultos }}</p>
+            <p><strong>Descripción</strong> {{ embarque.descripcion }}</p>
+            <p><strong>Artículos cargados</strong> {{ cantidad_articulos }}</p>
+            {% if embarque.estado != "Proximo" %}
+            <a class="download-articles" href="/embarques/{{ embarque.id }}/articulos/excel">Descargar artículos en Excel <span>↓</span></a>
+            {% endif %}
+        </section>
+    </main>
+    <script src="/static/feedback.js"></script>
+</body>
+</html>

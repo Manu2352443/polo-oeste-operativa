@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Polo Oeste | Apariencia</title><link rel="stylesheet" href="/static/admin.css"><link rel="stylesheet" href="/static/feedback.css"></head>
+<body>
+    <header class="admin-header"><a href="/principal" class="admin-brand"><img class="brand-logo" src="/static/polo-oeste.svg" alt="Polo Oeste"></a><a href="/principal" class="back-link">← Centro de operaciones</a></header>
+    <div class="config-layout"><aside class="config-sidebar"><p>CONFIGURACIÓN</p><a href="/usuarios">Usuarios</a><a href="/configuracion/empresas">Empresas</a><a class="is-active" href="/configuracion/apariencia">Apariencia</a></aside>
+        <main class="admin-page"><section class="admin-hero"><p>PREFERENCIAS</p><h1>Apariencia del sistema</h1><span>Elige el modo de visualización para este navegador. La preferencia se mantiene al volver a ingresar.</span></section>
+            <section class="theme-options"><button type="button" class="theme-option" data-theme-choice="dark"><span class="theme-preview theme-preview-dark"><i></i><i></i><i></i></span><strong>Modo oscuro</strong><small>Panel operativo de bajo brillo.</small></button><button type="button" class="theme-option" data-theme-choice="light"><span class="theme-preview theme-preview-light"><i></i><i></i><i></i></span><strong>Modo claro</strong><small>Mayor contraste para oficina y reportes.</small></button></section>
+            <section class="admin-section appearance-note"><p>IDENTIDAD VISUAL</p><h2>Logística clara, información primero.</h2><span>Ambos modos conservan la paleta verde de Polo Oeste, los indicadores de estado y los elementos visuales de movimiento.</span></section>
+        </main>
+    </div><script src="/static/feedback.js"></script><script>document.querySelectorAll('[data-theme-choice]').forEach(function(boton){function marcar(){boton.classList.toggle('is-selected',PoloOeste.getTheme()===boton.dataset.themeChoice)};marcar();boton.addEventListener('click',function(){PoloOeste.setTheme(boton.dataset.themeChoice);document.querySelectorAll('[data-theme-choice]').forEach(function(item){item.classList.toggle('is-selected',item===boton)});PoloOeste.showFeedback('Modo '+(boton.dataset.themeChoice==='light'?'claro':'oscuro')+' aplicado.');});document.addEventListener('polo-oeste-theme',marcar);});</script>
+</body></html>

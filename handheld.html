@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polo Oeste | Handheld</title>
+    <meta name="theme-color" content="#101812">
+    <link rel="manifest" href="/static/handheld-manifest.webmanifest">
+    <link rel="stylesheet" href="/static/handheld.css">
+    <link rel="stylesheet" href="/static/feedback.css">
+</head>
+<body class="handheld-body">
+    <header class="handheld-header">
+        <a href="/handheld/panel" class="handheld-logo"><img src="/static/polo-oeste.svg" alt="Polo Oeste"></a>
+        <span id="estadoConexion" class="handheld-online"><span></span> Conectado</span>
+    </header>
+
+    <main class="handheld-panel">
+        <nav class="handheld-tabs" aria-label="Módulos del handheld">
+            <button type="button" class="handheld-tab is-active" data-section="actividad">Actividad</button>
+            <button type="button" class="handheld-tab" data-section="control">Control de ingreso</button>
+        </nav>
+
+        <section id="seccionActividad" class="handheld-section">
+            <div class="handheld-welcome">
+                <p class="handheld-eyebrow">ACTIVIDAD OPERATIVA</p>
+                <h1>Control de actividad</h1>
+                <p>Usa el botón flotante para iniciar, pausar o reanudar tu tarea.</p>
+            </div>
+            <section class="handheld-status-card">
+                <span class="status-label">ESTADO ACTUAL</span>
+                <strong id="estadoActividad">Sin actividad</strong>
+                <span id="descripcionActividad">Aún no has iniciado una tarea.</span>
+                <div class="handheld-timer"><span>TIEMPO ACTIVO</span><strong id="tiempoActividad">00:00:00</strong></div>
+            </section>
+            <section class="handheld-actions">
+                <button id="botonRelanzar" type="button" class="handheld-secondary-button">↻ Relanzar botón flotante</button>
+                <form action="/handheld/logout" method="post"><button type="submit" class="handheld-logout-button">Cerrar sesión</button></form>
+            </section>
+        </section>
+
+        <section id="seccionControl" class="handheld-section" hidden>
+            <div class="handheld-welcome">
+                <p class="handheld-eyebrow">CONTROL DE INGRESO</p>
+                <h1>Registrar artículos</h1>
+                <p>Selecciona un control asignado, escanea el SKU y confirma la cantidad física.</p>
+            </div>
+            <div id="listaControles" class="handheld-controls"><p class="handheld-empty">Buscando controles disponibles…</p></div>
+            <section id="controlSeleccionado" class="handheld-control-card" hidden>
+                <div class="handheld-control-heading"><div><span class="status-label">CONTROL ACTIVO</span><strong id="tituloControl">—</strong><small id="colectorControl">—</small></div><button id="cambiarControl" type="button" class="handheld-compact-button">Cambiar</button></div>
+                <form id="formControlHandheld" class="handheld-scan-form">
+                    <label for="skuHandheld">SKU<input id="skuHandheld" name="sku" type="text" autocomplete="off" placeholder="Escanea o escribe" required></label>
+                    <label for="cantidadHandheld">CANTIDAD<input id="cantidadHandheld" name="cantidad" type="number" min="0.01" step="0.01" value="1" required></label>
+                    <button type="submit" class="handheld-primary-button">Registrar</button>
+                </form>
+                <p id="mensajeControlHandheld" class="handheld-inline-message">Listo para registrar.</p>
+                <div class="handheld-progress"><div><span>UNIDADES</span><strong id="resumenUnidades">0 / 0</strong></div><i><b id="barraHandheld"></b></i></div>
+                <div class="handheld-article-list"><div class="handheld-list-heading"><span>SKU</span><span>Avance</span></div><div id="articulosHandheld"></div></div>
+            </section>
+            <section class="handheld-actions"><form action="/handheld/logout" method="post"><button type="submit" class="handheld-logout-button">Cerrar sesión</button></form></section>
+        </section>
+    </main>
+
+    <div id="controlFlotante" class="floating-controller" aria-live="polite">
+        <div class="floating-information"><span id="textoFlotante">Preparado</span><small id="subtextoFlotante">Toca para iniciar</small></div>
+        <button id="botonFlotante" class="floating-play-button" type="button" aria-label="Iniciar actividad"><span id="iconoFlotante">▶</span></button>
+    </div>
+
+    <script src="/static/feedback.js"></script>
+    <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js");</script>
+    <script>
+        const controlFlotante = document.getElementById("controlFlotante"), botonFlotante = document.getElementById("botonFlotante"), botonRelanzar = document.getElementById("botonRelanzar");
+        const estadoActividad = document.getElementById("estadoActividad"), descripcionActividad = document.getElementById("descripcionActividad"), tiempoActividad = document.getElementById("tiempoActividad");
+        const textoFlotante = document.getElementById("textoFlotante"), subtextoFlotante = document.getElementById("subtextoFlotante"), iconoFlotante = document.getElementById("iconoFlotante"), estadoConexion = document.getElementById("estadoConexion");
+        const listaControles = document.getElementById("listaControles"), controlSeleccionado = document.getElementById("controlSeleccionado"), articulosHandheld = document.getElementById("articulosHandheld");
+        let datosActividad = { tiene_registro: false, activa: false, tiempo_segundos: 0 }, momentoSincronizacion = Date.now(), accionEnCurso = false, controlActivo = null;
+        function conexion(ok) { estadoConexion.classList.toggle("is-offline", !ok); estadoConexion.lastChild.textContent = ok ? " Conectado" : " Sin conexión"; }
+        function tiempo(segundos) { const h=Math.floor(segundos/3600),m=Math.floor((segundos%3600)/60),s=segundos%60; return [h,m,s].map(v=>String(v).padStart(2,"0")).join(":"); }
+        function tiempoVisible() { return Number(datosActividad.tiempo_segundos||0)+(datosActividad.activa?Math.max(0,Math.floor((Date.now()-momentoSincronizacion)/1000)):0); }
+        function interfazActividad() { tiempoActividad.textContent=tiempo(tiempoVisible()); if(!datosActividad.tiene_registro){estadoActividad.textContent="Sin actividad";descripcionActividad.textContent="Presiona Play para iniciar una nueva tarea.";textoFlotante.textContent="Preparado";subtextoFlotante.textContent="Toca para iniciar";iconoFlotante.textContent="▶";botonFlotante.classList.remove("is-active");return;} if(datosActividad.activa){estadoActividad.textContent="En operación";descripcionActividad.textContent="Tu tiempo activo se está registrando.";textoFlotante.textContent="Actividad activa";subtextoFlotante.textContent="Toca para pausar";iconoFlotante.textContent="Ⅱ";botonFlotante.classList.add("is-active");return;} estadoActividad.textContent="Actividad pausada";descripcionActividad.textContent="El contador está detenido.";textoFlotante.textContent="Actividad pausada";subtextoFlotante.textContent="Toca para reanudar";iconoFlotante.textContent="▶";botonFlotante.classList.remove("is-active"); }
+        function mostrarControlFlotante(){controlFlotante.classList.remove("is-visible");setTimeout(()=>controlFlotante.classList.add("is-visible"),80);}
+        async function consultarActividad(){try{const r=await fetch("/api/handheld/actividad",{cache:"no-store"});if(r.status===401){location.href="/handheld";return;}if(!r.ok)throw Error();datosActividad=await r.json();momentoSincronizacion=Date.now();interfazActividad();conexion(true);}catch(e){conexion(false);estadoActividad.textContent="Sin conexión";}}
+        async function alternarActividad(){if(accionEnCurso)return;accionEnCurso=true;botonFlotante.disabled=true;try{const r=await fetch("/api/handheld/actividad/toggle",{method:"POST"});if(!r.ok)throw Error();datosActividad=await r.json();momentoSincronizacion=Date.now();interfazActividad();conexion(true);}catch(e){conexion(false);PoloOeste.showFeedback("No se pudo actualizar la actividad.","error");}finally{accionEnCurso=false;botonFlotante.disabled=false;}}
+        function numero(v){return Number(v||0).toLocaleString("es-UY",{maximumFractionDigits:2});}
+        async function cargarControles(){try{const r=await fetch("/api/handheld/controles",{cache:"no-store"});if(!r.ok)throw Error();const d=await r.json();listaControles.innerHTML="";if(!d.controles.length){listaControles.innerHTML='<p class="handheld-empty">No hay controles de ingreso activos.</p>';conexion(true);return;}d.controles.forEach(c=>{const b=document.createElement("button");b.type="button";b.className="handheld-control-option";b.innerHTML=`<strong>${c.proveedor}</strong><span>${c.barco} · Colector ${c.colector||"sin asignar"}</span>`;b.onclick=()=>seleccionarControl(c.id);listaControles.appendChild(b);});conexion(true);}catch(e){conexion(false);listaControles.innerHTML='<p class="handheld-empty">No se pudieron consultar los controles.</p>';}}
+        async function seleccionarControl(id){controlActivo=id;listaControles.hidden=true;controlSeleccionado.hidden=false;await actualizarControl();document.getElementById("skuHandheld").focus();}
+        async function actualizarControl(){if(!controlActivo)return;try{const r=await fetch(`/api/handheld/controles/${controlActivo}`,{cache:"no-store"});if(!r.ok)throw Error();const d=await r.json(),a=d.articulos,total=a.reduce((x,i)=>x+Number(i.programada),0),hecho=a.reduce((x,i)=>x+Number(i.controlada),0);document.getElementById("tituloControl").textContent=`${d.control.proveedor} · ${d.control.barco}`;document.getElementById("colectorControl").textContent=`Colector ${d.control.colector||"sin asignar"}`;document.getElementById("resumenUnidades").textContent=`${numero(hecho)} / ${numero(total)}`;document.getElementById("barraHandheld").style.width=`${Math.min(100,total?hecho/total*100:0)}%`;articulosHandheld.innerHTML="";a.forEach(i=>{const e=document.createElement("div");e.className="handheld-article-row";e.innerHTML=`<span>${i.sku}</span><strong>${numero(i.controlada)} / ${numero(i.programada)}</strong>`;articulosHandheld.appendChild(e);});conexion(true);}catch(e){conexion(false);}}
+        document.querySelectorAll(".handheld-tab").forEach(b=>b.onclick=()=>{const control=b.dataset.section==="control";document.getElementById("seccionActividad").hidden=control;document.getElementById("seccionControl").hidden=!control;document.querySelectorAll(".handheld-tab").forEach(x=>x.classList.toggle("is-active",x===b));controlFlotante.hidden=control;if(control)cargarControles();});
+        document.getElementById("cambiarControl").onclick=()=>{controlActivo=null;controlSeleccionado.hidden=true;listaControles.hidden=false;cargarControles();};
+        document.getElementById("formControlHandheld").onsubmit=async e=>{e.preventDefault();const datos=Object.fromEntries(new FormData(e.currentTarget).entries()),m=document.getElementById("mensajeControlHandheld");try{const r=await fetch(`/api/handheld/controles/${controlActivo}/registrar`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(datos)}),d=await r.json();m.textContent=d.mensaje;m.className=d.ok?"handheld-inline-message is-ok":"handheld-inline-message is-error";if(d.ok){e.currentTarget.reset();document.getElementById("cantidadHandheld").value=1;document.getElementById("skuHandheld").focus();actualizarControl();}conexion(r.ok);}catch(x){conexion(false);}};
+        botonFlotante.onclick=alternarActividad;botonRelanzar.onclick=mostrarControlFlotante;window.addEventListener("load",()=>{mostrarControlFlotante();consultarActividad();});setInterval(consultarActividad,20000);setInterval(interfazActividad,1000);setInterval(()=>{if(!document.getElementById("seccionControl").hidden){cargarControles();actualizarControl();}},5000);
+    </script>
+</body>
+</html>

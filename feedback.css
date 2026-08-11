@@ -1,0 +1,13 @@
+.po-feedback, .po-progress { position: fixed; z-index: 9999; inset: 0; display: grid; place-items: center; padding: 22px; background: rgba(5,9,6,.58); backdrop-filter: blur(5px); }
+.po-feedback { pointer-events: none; animation: po-layer 2s ease-in-out forwards; }
+.po-feedback__box, .po-progress__box { min-width: min(90vw, 315px); padding: 28px; border: 1px solid #49604d; border-radius: 19px; background: linear-gradient(145deg, #253126, #121a13); box-shadow: 0 25px 72px rgba(0,0,0,.55); text-align: center; }
+.po-feedback__box { transform: translateY(12px) scale(.9); animation: po-box 2s cubic-bezier(.2,.8,.2,1) forwards; }
+.po-feedback__icon { display: grid; width: 67px; height: 67px; place-items: center; margin: 0 auto 14px; border-radius: 50%; background: #8bd55f; color: #071006; box-shadow: 0 0 0 9px rgba(118,190,73,.13); font-size: 41px; font-weight: 900; }
+.po-feedback--error .po-feedback__icon { background: #db6862; color: #fff2f1; box-shadow: 0 0 0 9px rgba(219,104,98,.13); }
+.po-feedback__text, .po-progress__text { color: #edf4ee; font-size: 14px; font-weight: 800; }
+.po-progress__box { display: flex; align-items: center; gap: 14px; text-align: left; }
+.po-progress__spinner { width: 30px; height: 30px; flex: 0 0 auto; border: 3px solid rgba(155,219,114,.23); border-top-color: #9bdb72; border-radius: 50%; animation: po-spin .8s linear infinite; }
+.po-progress__detail { display: block; margin-top: 4px; color: #9ca99f; font-size: 11px; }
+@keyframes po-layer { 0%,100% { opacity:0; } 12%,84% { opacity:1; } }
+@keyframes po-box { 0% { transform:translateY(12px) scale(.9); opacity:0; } 15%,82% { transform:translateY(0) scale(1); opacity:1; } 100% { transform:translateY(-8px) scale(.97); opacity:0; } }
+@keyframes po-spin { to { transform:rotate(360deg); } }
