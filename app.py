@@ -26,12 +26,25 @@ import sqlite3
 
 # Se indican los nombres reales de las carpetas. Windows no distingue mayúsculas,
 # pero el servidor Linux de Render sí.
+RUTA_BASE = os.path.dirname(os.path.abspath(__file__))
+CARPETA_TEMPLATES = os.path.join(RUTA_BASE, "Templates")
+CARPETA_STATIC = os.path.join(RUTA_BASE, "Static")
+
 app = Flask(
     __name__,
-    template_folder="Templates",
-    static_folder="Static",
+    template_folder=CARPETA_TEMPLATES if os.path.isdir(CARPETA_TEMPLATES) else RUTA_BASE,
+    static_folder=CARPETA_STATIC if os.path.isdir(CARPETA_STATIC) else None,
     static_url_path="/static",
 )
+
+if not os.path.isdir(CARPETA_STATIC):
+    EXTENSIONES_ESTATICAS = {".css", ".js", ".svg", ".png", ".jpg", ".jpeg", ".webmanifest", ".ico"}
+
+    @app.route("/static/<path:archivo>", endpoint="static")
+    def recurso_estatico_plano(archivo):
+        if "/" in archivo or "\\" in archivo or os.path.splitext(archivo)[1].lower() not in EXTENSIONES_ESTATICAS:
+            return "", 404
+        return send_from_directory(RUTA_BASE, archivo)
 app.register_blueprint(embarques_bp)
 app.register_blueprint(metricas_bp)
 app.secret_key = os.environ.get("SECRET_KEY", "clave-local-temporal-polo-oeste")
@@ -45,7 +58,6 @@ CONTRASENA_ADMIN_INICIAL = os.environ.get("ADMIN_INITIAL_PASSWORD", "123")
 
 COLECTOR_PREDETERMINADO = "Handheld web"
 INACTIVIDAD_MAXIMA = 30 * 60
-RUTA_BASE = os.path.dirname(os.path.abspath(__file__))
 # Permite ejecutar pruebas aisladas sin tocar la base operativa.
 RUTA_BD = os.environ.get("POLO_OESTE_DB", os.path.join(RUTA_BASE, "actividad.db"))
 RUTA_CERTIFICADOS = os.path.join(RUTA_BASE, "uploads", "certificados")
@@ -690,7 +702,10 @@ def health():
 
 @app.route("/service-worker.js")
 def service_worker():
-    respuesta = send_from_directory(RUTA_BASE, "Static/service-worker.js", mimetype="application/javascript")
+    archivo_worker = "Static/service-worker.js" if os.path.isfile(
+        os.path.join(RUTA_BASE, "Static", "service-worker.js")
+    ) else "service-worker.js"
+    respuesta = send_from_directory(RUTA_BASE, archivo_worker, mimetype="application/javascript")
     respuesta.headers["Cache-Control"] = "no-cache"
     return respuesta
 
