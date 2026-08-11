@@ -24,6 +24,8 @@ import mimetypes
 import re
 import sqlite3
 
+# Se indican los nombres reales de las carpetas. Windows no distingue mayúsculas,
+# pero el servidor Linux de Render sí.
 app = Flask(
     __name__,
     template_folder="Templates",
@@ -751,7 +753,7 @@ def inicio():
     if "usuario" in session:
         return redirect("/principal")
 
-    return render_template("index.html")
+    return render_template("Index.html")
 
 
 @app.route("/logout", methods=["POST"])
