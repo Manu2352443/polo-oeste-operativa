@@ -63,6 +63,10 @@ class CursorMemoria:
     def fetchall(self):
         return self._filas[:]
 
+    def __iter__(self):
+        """Permite recorrer el resultado de PRAGMA igual que sqlite3.Cursor."""
+        return iter(self._filas)
+
 
 TABLAS_CON_ID = {
     "usuarios", "tareas_supervision", "archivos_tareas_supervision",
