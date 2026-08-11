@@ -44,7 +44,18 @@ if not os.path.isdir(CARPETA_STATIC):
     def recurso_estatico_plano(archivo):
         if "/" in archivo or "\\" in archivo or os.path.splitext(archivo)[1].lower() not in EXTENSIONES_ESTATICAS:
             return "", 404
-        return send_from_directory(RUTA_BASE, archivo)
+        # El repositorio se cargó desde Windows, donde Style.css y style.css
+        # son equivalentes. Render usa Linux, así que localizamos el nombre
+        # real sin distinguir mayúsculas solo dentro de la lista permitida.
+        archivos_raiz = {
+            nombre.lower(): nombre
+            for nombre in os.listdir(RUTA_BASE)
+            if os.path.isfile(os.path.join(RUTA_BASE, nombre))
+        }
+        archivo_real = archivos_raiz.get(archivo.lower())
+        if not archivo_real:
+            return "", 404
+        return send_from_directory(RUTA_BASE, archivo_real)
 app.register_blueprint(embarques_bp)
 app.register_blueprint(metricas_bp)
 app.secret_key = os.environ.get("SECRET_KEY", "clave-local-temporal-polo-oeste")
