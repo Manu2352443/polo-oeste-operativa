@@ -24,7 +24,12 @@ import mimetypes
 import re
 import sqlite3
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder="Templates",
+    static_folder="Static",
+    static_url_path="/static",
+)
 app.register_blueprint(embarques_bp)
 app.register_blueprint(metricas_bp)
 app.secret_key = os.environ.get("SECRET_KEY", "clave-local-temporal-polo-oeste")
