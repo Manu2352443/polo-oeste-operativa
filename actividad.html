@@ -144,8 +144,7 @@
             input.value = registro.tarea_realizada || "";
             input.addEventListener("change", async function () {
                 const respuesta = await fetch(`/actividad/${registro.id}/tarea`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({tarea: input.value}) });
-                if (!respuesta.ok) { if (window.PoloOeste) PoloOeste.showFeedback("No se pudo guardar la tarea.", "error"); return; }
-                if (window.PoloOeste) PoloOeste.showFeedback("Tarea actualizada.");
+                if (!respuesta.ok) { if (window.PoloOeste) PoloOeste.showFeedback("No se pudo guardar la tarea.", "error"); }
             });
             celda.appendChild(input);
             return celda;

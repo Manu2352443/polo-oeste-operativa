@@ -147,7 +147,8 @@ button:disabled { cursor: not-allowed; opacity: .48; filter: grayscale(1); trans
 .collector-light.is-online { background: #76be49; box-shadow: 0 0 12px rgba(118,190,73,.75); }
 .collector-light.is-alert { background: #e36c67; animation: collector-alert .9s infinite alternate; }
 .collector-light.is-warning { background: #efc45b; animation: collector-alert 1.15s infinite alternate; }
-.activity-task-input { width: min(220px, 100%); min-width: 145px; padding: 8px 10px; color: var(--text, #edf3ee); background: rgba(255,255,255,.04); border: 1px solid var(--line, rgba(141, 164, 146, .2)); border-radius: 8px; }
+.excel-table td:has(.activity-task-input) { text-align: center; vertical-align: middle; }
+.activity-task-input { display: block; width: min(220px, 100%); min-width: 145px; margin: 0 auto; padding: 8px 10px; color: var(--text, #edf3ee); background: rgba(255,255,255,.04); border: 1px solid var(--line, rgba(141, 164, 146, .2)); border-radius: 8px; }
 .activity-task-input:focus { outline: none; border-color: #76be49; box-shadow: 0 0 0 3px rgba(118,190,73,.14); }
 @keyframes collector-alert { to { opacity: .35; box-shadow: 0 0 16px currentColor; } }
 @media (max-width: 850px) { .collector-monitor { grid-template-columns: 1fr; } }
