@@ -279,6 +279,7 @@ def inicializar_db():
             "ultimo_movimiento": "REAL",
             "bateria_porcentaje": "INTEGER",
             "cargando": "INTEGER NOT NULL DEFAULT 0",
+            "alarma_activa": "INTEGER NOT NULL DEFAULT 0",
             "estado_dispositivo": "TEXT NOT NULL DEFAULT 'Sin conexión'"
         }
         for columna, definicion in nuevas_columnas_colector.items():
@@ -334,6 +335,11 @@ def inicializar_db():
             conexion.execute("""
                 ALTER TABLE actividades
                 ADD COLUMN origen_externo TEXT
+            """)
+        if "tarea_realizada" not in columnas_actividades:
+            conexion.execute("""
+                ALTER TABLE actividades
+                ADD COLUMN tarea_realizada TEXT NOT NULL DEFAULT ''
             """)
 
         conexion.execute("""
@@ -587,14 +593,21 @@ def obtener_registros_actividad_filtrados(
             funcionario LIKE ? COLLATE NOCASE OR
             colector LIKE ? COLLATE NOCASE OR
             estado LIKE ? COLLATE NOCASE OR
+            tarea_realizada LIKE ? COLLATE NOCASE OR
             CAST(id AS TEXT) LIKE ?
         )""")
         termino = "%" + consulta + "%"
-        parametros.extend([termino, termino, termino, termino])
+        parametros.extend([termino, termino, termino, termino, termino])
 
     where = " WHERE " + " AND ".join(condiciones) if condiciones else ""
     return conexion.execute(f"""
-        SELECT * FROM actividades {where}
+        SELECT actividades.*,
+               CASE WHEN (SELECT COUNT(*) FROM periodos_actividad
+                          WHERE actividad_id = actividades.id) > 0
+                    THEN (SELECT COUNT(*) FROM periodos_actividad
+                          WHERE actividad_id = actividades.id) - 1
+                    ELSE 0 END AS cantidad_pausas
+        FROM actividades {where}
         ORDER BY
             CASE WHEN estado = 'Actividad finalizada' THEN 1 ELSE 0 END,
             id DESC
@@ -671,6 +684,14 @@ def estado_visible(registro):
 
 def serializar_registro(registro, ahora=None):
     segundos = calcular_tiempo(registro, ahora)
+    try:
+        pausas = int(registro["cantidad_pausas"] or 0)
+    except (KeyError, IndexError):
+        pausas = 0
+    try:
+        tarea = registro["tarea_realizada"] or ""
+    except (KeyError, IndexError):
+        tarea = ""
 
     return {
         "id": registro["id"],
@@ -680,7 +701,9 @@ def serializar_registro(registro, ahora=None):
         "tiempo": formatear_tiempo(segundos),
         "tiempo_segundos": segundos,
         "colector": registro["colector"],
-        "activa": bool(registro["activa"])
+        "activa": bool(registro["activa"]),
+        "cantidad_pausas": pausas,
+        "tarea_realizada": tarea
     }
 
 
@@ -860,6 +883,24 @@ def eliminar_registro_actividad(actividad_id):
         return redirect("/actividad?mensaje=" + quote(
             "Registro de actividad eliminado correctamente."
         ))
+    finally:
+        conexion.close()
+
+
+@app.route("/actividad/<int:actividad_id>/tarea", methods=["POST"])
+@admin_requerido
+def guardar_tarea_actividad(actividad_id):
+    datos = request.get_json(silent=True) or {}
+    tarea = str(datos.get("tarea", "")).strip()[:300]
+    conexion = conectar_db()
+    try:
+        with conexion:
+            resultado = conexion.execute("""
+                UPDATE actividades SET tarea_realizada = ? WHERE id = ?
+            """, (tarea, actividad_id))
+        if resultado.rowcount == 0:
+            return jsonify({"ok": False, "mensaje": "Registro no encontrado."}), 404
+        return jsonify({"ok": True, "tarea": tarea})
     finally:
         conexion.close()
 
@@ -2299,7 +2340,7 @@ def exportar_actividad_filtrada():
         libro = Workbook()
         hoja = libro.active
         hoja.title = "Actividad"
-        hoja.append(["Fecha", "Funcionario", "Status", "Tiempo activo", "Colector"])
+        hoja.append(["Fecha", "Funcionario", "Status", "Tiempo activo", "Colector", "Pausas", "Tarea realizada"])
         relleno = PatternFill("solid", fgColor="315F36")
         for celda in hoja[1]:
             celda.fill = relleno
@@ -2309,9 +2350,9 @@ def exportar_actividad_filtrada():
             dato = serializar_registro(registro, ahora)
             hoja.append([
                 dato["fecha"], dato["funcionario"], dato["status"],
-                dato["tiempo"], dato["colector"]
+                dato["tiempo"], dato["colector"], dato["cantidad_pausas"], dato["tarea_realizada"]
             ])
-        for letra, ancho in zip("ABCDE", [14, 28, 25, 18, 24]):
+        for letra, ancho in zip("ABCDEFG", [14, 28, 25, 18, 24, 12, 42]):
             hoja.column_dimensions[letra].width = ancho
         hoja.freeze_panes = "A2"
         archivo = BytesIO()
@@ -2578,6 +2619,7 @@ def api_android_heartbeat():
     # Evita que una marca errónea de reloj altere el registro de actividad.
     movimiento = min(ahora, max(ahora - 7200, movimiento))
     cargando = 1 if bool(datos.get("cargando", False)) else 0
+    alarma_activa = 1 if bool(datos.get("alarma_activa", False)) else 0
     conexion = conectar_db()
     try:
         with conexion:
@@ -2585,9 +2627,9 @@ def api_android_heartbeat():
                 UPDATE colectores
                 SET ultimo_ping = ?, ultimo_movimiento = ?,
                     bateria_porcentaje = CASE WHEN ? >= 0 THEN ? ELSE bateria_porcentaje END,
-                    cargando = ?, estado_dispositivo = 'En línea'
+                    cargando = ?, alarma_activa = ?, estado_dispositivo = 'En línea'
                 WHERE numero = ?
-            """, (ahora, movimiento, bateria, bateria, cargando, sesion_android["colector"]))
+            """, (ahora, movimiento, bateria, bateria, cargando, alarma_activa, sesion_android["colector"]))
         return jsonify({"ok": True, "servidor_en": ahora})
     finally:
         conexion.close()
@@ -2885,9 +2927,33 @@ def api_registros_actividad():
                 for registro in datos
             )
 
+            colectores = conexion.execute("""
+                SELECT numero, descripcion, activo, ultimo_ping, ultimo_movimiento,
+                       bateria_porcentaje, cargando, alarma_activa, estado_dispositivo
+                FROM colectores ORDER BY numero
+            """).fetchall()
+            activos = []
+            alertas_alarma = []
+            alertas_bateria = []
+            for colector in colectores:
+                en_linea = bool(colector["ultimo_ping"] and float(colector["ultimo_ping"]) >= ahora - 90)
+                if en_linea and bool(colector["activo"]):
+                    activos.append(colector["numero"])
+                sin_movimiento = bool(colector["ultimo_movimiento"] and float(colector["ultimo_movimiento"]) <= ahora - 30 * 60)
+                if en_linea and (bool(colector["alarma_activa"]) or sin_movimiento):
+                    alertas_alarma.append(colector["numero"])
+                bateria = colector["bateria_porcentaje"]
+                if en_linea and bateria is not None and int(bateria) <= 20 and not bool(colector["cargando"]):
+                    alertas_bateria.append(colector["numero"])
+
             return jsonify({
                 "resumen": "En operacion" if hay_operacion else "Sin actividad",
-                "registros": datos
+                "registros": datos,
+                "colectores": {
+                    "activos": activos,
+                    "alerta_alarma": alertas_alarma,
+                    "alerta_bateria": alertas_bateria
+                }
             })
     finally:
         conexion.close()

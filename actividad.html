@@ -41,6 +41,11 @@
     </div>
 
     <main class="main-content">
+        <section class="collector-monitor" aria-label="Estado de colectores">
+            <article class="collector-indicator"><span class="collector-light is-online"></span><div><small>COLECTORES ACTIVOS</small><strong id="colectoresActivos">0</strong><p id="detalleColectores">Sin equipos en línea</p></div></article>
+            <article class="collector-indicator"><span id="luzAlarma" class="collector-light"></span><div><small>ALERTA ANTI-PÉRDIDA</small><strong id="alertaAlarma">Sin alertas</strong><p id="detalleAlarma">Sin colectores sonando</p></div></article>
+            <article class="collector-indicator"><span id="luzBateria" class="collector-light"></span><div><small>BATERÍA BAJA</small><strong id="alertaBateria">Sin alertas</strong><p id="detalleBateria">Baterías en nivel seguro</p></div></article>
+        </section>
         <section class="activity-table-card">
             <div class="table-header">
                 <div>
@@ -72,7 +77,7 @@
             </div>
             <div class="table-scroll">
                 <table class="excel-table">
-                    <thead><tr><th>Fecha</th><th>Funcionario</th><th>Status</th><th>Tiempo</th><th>Colector</th><th>Acciones</th></tr></thead>
+                    <thead><tr><th>Fecha</th><th>Funcionario</th><th>Status</th><th>Tiempo</th><th>Colector</th><th>Pausas</th><th>Tarea realizada</th><th>Acciones</th></tr></thead>
                     <tbody id="tablaActividad"><tr><td colspan="6" class="empty-table">Cargando registros…</td></tr></tbody>
                 </table>
             </div>
@@ -105,7 +110,7 @@
         if (new URLSearchParams(location.search).has("bloqueado")) abrirBloqueoPruebas();
 
         function crearCelda(texto) { const celda = document.createElement("td"); celda.textContent = texto; return celda; }
-        function mostrarMensaje(texto) { tablaActividad.innerHTML = `<tr><td colspan="6" class="empty-table">${texto}</td></tr>`; }
+        function mostrarMensaje(texto) { tablaActividad.innerHTML = `<tr><td colspan="8" class="empty-table">${texto}</td></tr>`; }
         function parametrosFiltro() {
             return new URLSearchParams({
                 fecha: filtroFecha.value,
@@ -130,12 +135,27 @@
             celda.appendChild(formulario);
             return celda;
         }
+        function crearTarea(registro) {
+            const celda = document.createElement("td");
+            const input = document.createElement("input");
+            input.type = "text";
+            input.className = "activity-task-input";
+            input.placeholder = "Ej.: Picking zona A";
+            input.value = registro.tarea_realizada || "";
+            input.addEventListener("change", async function () {
+                const respuesta = await fetch(`/actividad/${registro.id}/tarea`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({tarea: input.value}) });
+                if (!respuesta.ok) { if (window.PoloOeste) PoloOeste.showFeedback("No se pudo guardar la tarea.", "error"); return; }
+                if (window.PoloOeste) PoloOeste.showFeedback("Tarea actualizada.");
+            });
+            celda.appendChild(input);
+            return celda;
+        }
         function mostrarRegistros(registros) {
             tablaActividad.innerHTML = "";
             if (!registros.length) return mostrarMensaje("No hay actividades para la fecha seleccionada.");
             registros.forEach(function (registro) {
                 const fila = document.createElement("tr");
-                fila.append(crearCelda(registro.fecha), crearCelda(registro.funcionario), crearCelda(registro.status), crearCelda(registro.tiempo), crearCelda(registro.colector), crearAccionEliminar(registro.id));
+                fila.append(crearCelda(registro.fecha), crearCelda(registro.funcionario), crearCelda(registro.status), crearCelda(registro.tiempo), crearCelda(registro.colector), crearCelda(registro.cantidad_pausas), crearTarea(registro), crearAccionEliminar(registro.id));
                 tablaActividad.appendChild(fila);
             });
             if (window.PoloOesteTables) PoloOesteTables.refrescar(tablaActividad.closest("table"));
@@ -148,6 +168,16 @@
                 resumenEstado.textContent = datos.resumen === "En operacion" ? "Operación activa" : "Sin actividad";
                 puntoEstado.style.background = datos.resumen === "En operacion" ? "#76be49" : "#657168";
                 puntoEstado.style.boxShadow = datos.resumen === "En operacion" ? "0 0 11px rgba(118,190,73,.8)" : "none";
+                const colectores = datos.colectores || {};
+                const activos = colectores.activos || [], alarmas = colectores.alerta_alarma || [], baterias = colectores.alerta_bateria || [];
+                document.getElementById("colectoresActivos").textContent = activos.length;
+                document.getElementById("detalleColectores").textContent = activos.length ? activos.join(" · ") : "Sin equipos en línea";
+                document.getElementById("alertaAlarma").textContent = alarmas.length ? `${alarmas.length} alerta(s)` : "Sin alertas";
+                document.getElementById("detalleAlarma").textContent = alarmas.length ? alarmas.join(" · ") : "Sin colectores sonando";
+                document.getElementById("luzAlarma").classList.toggle("is-alert", alarmas.length > 0);
+                document.getElementById("alertaBateria").textContent = baterias.length ? `${baterias.length} alerta(s)` : "Sin alertas";
+                document.getElementById("detalleBateria").textContent = baterias.length ? baterias.join(" · ") : "Baterías en nivel seguro";
+                document.getElementById("luzBateria").classList.toggle("is-warning", baterias.length > 0);
                 mostrarRegistros(datos.registros);
             } catch (error) {
                 resumenEstado.textContent = "Sin conexión";
