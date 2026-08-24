@@ -84,6 +84,17 @@
         </section>
     </main>
 
+    <div id="modalPeriodos" class="periods-modal" hidden role="dialog" aria-modal="true" aria-labelledby="tituloPeriodos">
+        <section class="periods-card">
+            <div class="periods-header">
+                <div><p class="eyebrow">HISTORIAL DE TRAMOS</p><h2 id="tituloPeriodos">Períodos de trabajo</h2></div>
+                <button id="cerrarPeriodos" type="button" class="periods-close" aria-label="Cerrar">×</button>
+            </div>
+            <p class="periods-help">Cada pausa cierra un período. Al reanudar la actividad se crea un nuevo tramo para asignar su tarea.</p>
+            <div class="table-scroll"><table class="excel-table periods-table"><thead><tr><th>Período</th><th>Inicio</th><th>Fin</th><th>Duración</th><th>Tarea</th></tr></thead><tbody id="tablaPeriodos"></tbody></table></div>
+        </section>
+    </div>
+
     <script src="/static/feedback.js"></script>
     <script src="/static/table-sort.js"></script>
     <script>
@@ -98,10 +109,16 @@
         const quitarFiltroActividad = document.getElementById("quitarFiltroActividad");
         const botonExportar = document.getElementById("botonExportar");
         const modalBloqueoPruebas = document.getElementById("modalBloqueoPruebas");
+        const modalPeriodos = document.getElementById("modalPeriodos");
+        const tablaPeriodos = document.getElementById("tablaPeriodos");
+        const tituloPeriodos = document.getElementById("tituloPeriodos");
+        const tareasOperativas = ["", "Almacenaje", "Picking", "Control de embarque", "Auditoria"];
         function abrirBloqueoPruebas() { modalBloqueoPruebas.hidden = false; }
         function cerrarBloqueoPruebas() { modalBloqueoPruebas.hidden = true; }
         document.getElementById("cerrarBloqueoPruebas").addEventListener("click", cerrarBloqueoPruebas);
         modalBloqueoPruebas.addEventListener("click", function(evento) { if (evento.target === modalBloqueoPruebas) cerrarBloqueoPruebas(); });
+        document.getElementById("cerrarPeriodos").addEventListener("click", function () { modalPeriodos.hidden = true; });
+        modalPeriodos.addEventListener("click", function(evento) { if (evento.target === modalPeriodos) modalPeriodos.hidden = true; });
         document.querySelectorAll(".tool-bar a").forEach(function(enlace) {
             if (enlace.getAttribute("href") !== "/actividad" && enlace.getAttribute("href") !== "/configuracion") {
                 enlace.addEventListener("click", function(evento) { evento.preventDefault(); abrirBloqueoPruebas(); });
@@ -110,7 +127,6 @@
         if (new URLSearchParams(location.search).has("bloqueado")) abrirBloqueoPruebas();
 
         const relojesActividad = new Map();
-        const guardadosPendientes = new Map();
 
         function crearCelda(texto, campo) {
             const celda = document.createElement("td");
@@ -155,26 +171,73 @@
             });
             if (!respuesta.ok && window.PoloOeste) PoloOeste.showFeedback("No se pudo guardar la tarea.", "error");
         }
-        function programarGuardado(id, input, inmediato) {
-            if (guardadosPendientes.has(id)) clearTimeout(guardadosPendientes.get(id));
-            const guardar = function () {
-                guardadosPendientes.delete(id);
-                guardarTarea(id, input);
-            };
-            if (inmediato) guardar();
-            else guardadosPendientes.set(id, setTimeout(guardar, 900));
+        function crearSelectorTarea(tarea) {
+            const selector = document.createElement("select");
+            selector.className = "activity-task-input";
+            selector.setAttribute("aria-label", "Tarea realizada");
+            tareasOperativas.forEach(function (opcion) {
+                const elemento = document.createElement("option");
+                elemento.value = opcion;
+                elemento.textContent = opcion || "Seleccionar tarea";
+                elemento.selected = opcion === (tarea || "");
+                selector.appendChild(elemento);
+            });
+            return selector;
         }
         function crearTarea(registro) {
             const celda = document.createElement("td");
-            const input = document.createElement("input");
-            input.type = "text";
-            input.className = "activity-task-input";
-            input.dataset.actividadId = registro.id;
-            input.placeholder = "Ej.: Picking zona A";
-            input.value = registro.tarea_realizada || "";
-            input.addEventListener("input", function () { programarGuardado(registro.id, input, false); });
-            input.addEventListener("blur", function () { programarGuardado(registro.id, input, true); });
-            celda.appendChild(input);
+            const selector = crearSelectorTarea(registro.tarea_realizada);
+            selector.dataset.actividadId = registro.id;
+            selector.addEventListener("change", function () { guardarTarea(registro.id, selector); });
+            celda.appendChild(selector);
+            return celda;
+        }
+        async function guardarTareaPeriodo(actividadId, periodoId, selector) {
+            const respuesta = await fetch(`/actividad/${actividadId}/periodos/${periodoId}/tarea`, {
+                method: "POST", headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({tarea: selector.value})
+            });
+            if (!respuesta.ok && window.PoloOeste) PoloOeste.showFeedback("No se pudo guardar la tarea del período.", "error");
+        }
+        async function abrirPeriodos(registro) {
+            tituloPeriodos.textContent = `Períodos · ${registro.funcionario}`;
+            tablaPeriodos.innerHTML = '<tr><td colspan="5" class="empty-table">Cargando períodos…</td></tr>';
+            modalPeriodos.hidden = false;
+            try {
+                const respuesta = await fetch(`/actividad/${registro.id}/periodos`, {cache: "no-store"});
+                if (!respuesta.ok) throw new Error();
+                const datos = await respuesta.json();
+                tablaPeriodos.innerHTML = "";
+                if (!datos.periodos.length) {
+                    tablaPeriodos.innerHTML = '<tr><td colspan="5" class="empty-table">Este registro no tiene períodos.</td></tr>';
+                    return;
+                }
+                datos.periodos.forEach(function (periodo) {
+                    const fila = document.createElement("tr");
+                    const selector = crearSelectorTarea(periodo.tarea);
+                    selector.addEventListener("change", function () { guardarTareaPeriodo(registro.id, periodo.id, selector); });
+                    fila.append(crearCelda(periodo.periodo), crearCelda(periodo.inicio), crearCelda(periodo.fin), crearCelda(periodo.duracion));
+                    const tarea = document.createElement("td");
+                    tarea.appendChild(selector);
+                    fila.appendChild(tarea);
+                    tablaPeriodos.appendChild(fila);
+                });
+            } catch (error) {
+                tablaPeriodos.innerHTML = '<tr><td colspan="5" class="empty-table">No se pudieron cargar los períodos.</td></tr>';
+            }
+        }
+        function crearAcciones(registro) {
+            const celda = document.createElement("td");
+            const contenedor = document.createElement("div");
+            contenedor.className = "activity-actions";
+            const botonPeriodos = document.createElement("button");
+            botonPeriodos.type = "button";
+            botonPeriodos.className = "periods-button";
+            botonPeriodos.textContent = "Ver períodos";
+            botonPeriodos.addEventListener("click", function () { abrirPeriodos(registro); });
+            contenedor.appendChild(botonPeriodos);
+            contenedor.appendChild(crearAccionEliminar(registro.id).firstChild);
+            celda.appendChild(contenedor);
             return celda;
         }
         function crearFila(registro) {
@@ -188,7 +251,7 @@
                 crearCelda(registro.colector, "colector"),
                 crearCelda(registro.cantidad_pausas, "pausas"),
                 crearTarea(registro),
-                crearAccionEliminar(registro.id)
+                crearAcciones(registro)
             );
             fila.querySelector('[data-campo="tiempo"]').dataset.relojId = registro.id;
             return fila;
@@ -239,8 +302,8 @@
                     actualizarCelda(fila, "status", registro.status);
                     actualizarCelda(fila, "colector", registro.colector);
                     actualizarCelda(fila, "pausas", registro.cantidad_pausas);
-                    const input = fila.querySelector(".activity-task-input");
-                    if (input && document.activeElement !== input && input.value !== (registro.tarea_realizada || "")) input.value = registro.tarea_realizada || "";
+                    const selector = fila.querySelector(".activity-task-input");
+                    if (selector && document.activeElement !== selector && selector.value !== (registro.tarea_realizada || "")) selector.value = registro.tarea_realizada || "";
                 }
                 filasActuales.delete(id);
             });

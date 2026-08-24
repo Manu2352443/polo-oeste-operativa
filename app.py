@@ -70,6 +70,7 @@ MODO_PRUEBAS_ACTIVIDAD = os.environ.get("MODO_PRUEBAS_ACTIVIDAD", "1") == "1"
 
 COLECTOR_PREDETERMINADO = "Handheld web"
 INACTIVIDAD_MAXIMA = 30 * 60
+TAREAS_OPERATIVAS = ("", "Almacenaje", "Picking", "Control de embarque", "Auditoria")
 # Permite ejecutar pruebas aisladas sin tocar la base operativa.
 RUTA_BD = os.environ.get("POLO_OESTE_DB", os.path.join(RUTA_BASE, "actividad.db"))
 RUTA_CERTIFICADOS = os.path.join(RUTA_BASE, "uploads", "certificados")
@@ -354,9 +355,20 @@ def inicializar_db():
                 actividad_id INTEGER NOT NULL,
                 inicio REAL NOT NULL,
                 fin REAL,
+                tarea TEXT NOT NULL DEFAULT '',
                 FOREIGN KEY (actividad_id) REFERENCES actividades(id)
             )
         """)
+
+        columnas_periodos = {
+            columna["name"]
+            for columna in conexion.execute("PRAGMA table_info(periodos_actividad)")
+        }
+        if "tarea" not in columnas_periodos:
+            conexion.execute("""
+                ALTER TABLE periodos_actividad
+                ADD COLUMN tarea TEXT NOT NULL DEFAULT ''
+            """)
 
         # Si se actualiza con una actividad que ya estaba en curso, se inicia
         # su primer período desde el último momento activo conocido.
@@ -594,10 +606,13 @@ def obtener_registros_actividad_filtrados(
             colector LIKE ? COLLATE NOCASE OR
             estado LIKE ? COLLATE NOCASE OR
             tarea_realizada LIKE ? COLLATE NOCASE OR
+            COALESCE((SELECT tarea FROM periodos_actividad
+                      WHERE actividad_id = actividades.id
+                      ORDER BY id DESC LIMIT 1), '') LIKE ? COLLATE NOCASE OR
             CAST(id AS TEXT) LIKE ?
         )""")
         termino = "%" + consulta + "%"
-        parametros.extend([termino, termino, termino, termino, termino])
+        parametros.extend([termino, termino, termino, termino, termino, termino])
 
     where = " WHERE " + " AND ".join(condiciones) if condiciones else ""
     return conexion.execute(f"""
@@ -606,7 +621,10 @@ def obtener_registros_actividad_filtrados(
                           WHERE actividad_id = actividades.id) > 0
                     THEN (SELECT COUNT(*) FROM periodos_actividad
                           WHERE actividad_id = actividades.id) - 1
-                    ELSE 0 END AS cantidad_pausas
+                    ELSE 0 END AS cantidad_pausas,
+               COALESCE((SELECT tarea FROM periodos_actividad
+                         WHERE actividad_id = actividades.id
+                         ORDER BY id DESC LIMIT 1), tarea_realizada, '') AS tarea_periodo
         FROM actividades {where}
         ORDER BY
             CASE WHEN estado = 'Actividad finalizada' THEN 1 ELSE 0 END,
@@ -689,9 +707,12 @@ def serializar_registro(registro, ahora=None):
     except (KeyError, IndexError):
         pausas = 0
     try:
-        tarea = registro["tarea_realizada"] or ""
+        tarea = registro["tarea_periodo"] or ""
     except (KeyError, IndexError):
-        tarea = ""
+        try:
+            tarea = registro["tarea_realizada"] or ""
+        except (KeyError, IndexError):
+            tarea = ""
 
     return {
         "id": registro["id"],
@@ -891,15 +912,87 @@ def eliminar_registro_actividad(actividad_id):
 @admin_requerido
 def guardar_tarea_actividad(actividad_id):
     datos = request.get_json(silent=True) or {}
-    tarea = str(datos.get("tarea", "")).strip()[:300]
+    tarea = str(datos.get("tarea", "")).strip()
+    if tarea not in TAREAS_OPERATIVAS:
+        return jsonify({"ok": False, "mensaje": "Tarea no válida."}), 400
     conexion = conectar_db()
     try:
         with conexion:
             resultado = conexion.execute("""
                 UPDATE actividades SET tarea_realizada = ? WHERE id = ?
             """, (tarea, actividad_id))
+            conexion.execute("""
+                UPDATE periodos_actividad
+                SET tarea = ?
+                WHERE id = (
+                    SELECT id FROM periodos_actividad
+                    WHERE actividad_id = ?
+                    ORDER BY CASE WHEN fin IS NULL THEN 0 ELSE 1 END, id DESC
+                    LIMIT 1
+                )
+            """, (tarea, actividad_id))
         if resultado.rowcount == 0:
             return jsonify({"ok": False, "mensaje": "Registro no encontrado."}), 404
+        return jsonify({"ok": True, "tarea": tarea})
+    finally:
+        conexion.close()
+
+
+def serializar_periodo_actividad(periodo, numero, ahora=None):
+    ahora = ahora or time.time()
+    inicio = float(periodo["inicio"])
+    fin = float(periodo["fin"] or ahora)
+    return {
+        "id": periodo["id"],
+        "periodo": numero,
+        "inicio": datetime.fromtimestamp(inicio).strftime("%d/%m/%Y %H:%M:%S"),
+        "fin": datetime.fromtimestamp(fin).strftime("%d/%m/%Y %H:%M:%S") if periodo["fin"] else "En curso",
+        "duracion": formatear_tiempo(max(0, int(fin - inicio))),
+        "tarea": periodo["tarea"] or "",
+        "activo": periodo["fin"] is None
+    }
+
+
+@app.route("/actividad/<int:actividad_id>/periodos")
+@admin_requerido
+def obtener_periodos_actividad(actividad_id):
+    conexion = conectar_db()
+    try:
+        periodos = conexion.execute("""
+            SELECT id, inicio, fin, tarea
+            FROM periodos_actividad
+            WHERE actividad_id = ?
+            ORDER BY inicio ASC, id ASC
+        """, (actividad_id,)).fetchall()
+        return jsonify({
+            "ok": True,
+            "periodos": [serializar_periodo_actividad(periodo, indice + 1)
+                         for indice, periodo in enumerate(periodos)]
+        })
+    finally:
+        conexion.close()
+
+
+@app.route("/actividad/<int:actividad_id>/periodos/<int:periodo_id>/tarea", methods=["POST"])
+@admin_requerido
+def guardar_tarea_periodo_actividad(actividad_id, periodo_id):
+    datos = request.get_json(silent=True) or {}
+    tarea = str(datos.get("tarea", "")).strip()
+    if tarea not in TAREAS_OPERATIVAS:
+        return jsonify({"ok": False, "mensaje": "Tarea no válida."}), 400
+    conexion = conectar_db()
+    try:
+        with conexion:
+            resultado = conexion.execute("""
+                UPDATE periodos_actividad SET tarea = ?
+                WHERE id = ? AND actividad_id = ?
+            """, (tarea, periodo_id, actividad_id))
+            if resultado.rowcount:
+                conexion.execute("""
+                    UPDATE actividades SET tarea_realizada = ? WHERE id = ?
+                """, (tarea, actividad_id))
+        if resultado.rowcount == 0:
+            return jsonify({"ok": False, "mensaje": "Período no encontrado."}), 404
         return jsonify({"ok": True, "tarea": tarea})
     finally:
         conexion.close()
@@ -2355,6 +2448,47 @@ def exportar_actividad_filtrada():
         for letra, ancho in zip("ABCDEFG", [14, 28, 25, 18, 24, 12, 42]):
             hoja.column_dimensions[letra].width = ancho
         hoja.freeze_panes = "A2"
+
+        hoja_periodos = libro.create_sheet("Periodos activos")
+        hoja_periodos.append([
+            "Fecha", "Funcionario", "Colector", "Período", "Inicio",
+            "Fin", "Duración", "Segundos activos", "Tarea"
+        ])
+        for celda in hoja_periodos[1]:
+            celda.fill = relleno
+            celda.font = Font(color="FFFFFF", bold=True)
+            celda.alignment = Alignment(horizontal="center")
+        ids_actividad = [registro["id"] for registro in registros]
+        periodos = []
+        if ids_actividad:
+            marcadores = ", ".join("?" for _ in ids_actividad)
+            periodos = conexion.execute(f"""
+                SELECT periodos_actividad.id, periodos_actividad.actividad_id,
+                       periodos_actividad.inicio, periodos_actividad.fin,
+                       periodos_actividad.tarea, actividades.funcionario,
+                       actividades.colector
+                FROM periodos_actividad
+                INNER JOIN actividades ON actividades.id = periodos_actividad.actividad_id
+                WHERE periodos_actividad.actividad_id IN ({marcadores})
+                ORDER BY periodos_actividad.actividad_id, periodos_actividad.inicio, periodos_actividad.id
+            """, ids_actividad).fetchall()
+        contador_periodos = {}
+        for periodo in periodos:
+            actividad_id = periodo["actividad_id"]
+            contador_periodos[actividad_id] = contador_periodos.get(actividad_id, 0) + 1
+            inicio = float(periodo["inicio"])
+            fin = float(periodo["fin"] or ahora)
+            segundos = max(0, int(fin - inicio))
+            hoja_periodos.append([
+                fecha_desde_marca(inicio), periodo["funcionario"], periodo["colector"],
+                contador_periodos[actividad_id],
+                datetime.fromtimestamp(inicio).strftime("%d/%m/%Y %H:%M:%S"),
+                datetime.fromtimestamp(fin).strftime("%d/%m/%Y %H:%M:%S") if periodo["fin"] else "En curso",
+                formatear_tiempo(segundos), segundos, periodo["tarea"] or ""
+            ])
+        for letra, ancho in zip("ABCDEFGHI", [14, 28, 22, 12, 22, 22, 16, 18, 26]):
+            hoja_periodos.column_dimensions[letra].width = ancho
+        hoja_periodos.freeze_panes = "A2"
         archivo = BytesIO()
         libro.save(archivo)
         archivo.seek(0)

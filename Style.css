@@ -150,5 +150,15 @@ button:disabled { cursor: not-allowed; opacity: .48; filter: grayscale(1); trans
 .excel-table td:has(.activity-task-input) { text-align: center; vertical-align: middle; }
 .activity-task-input { display: block; width: min(220px, 100%); min-width: 145px; margin: 0 auto; padding: 8px 10px; color: var(--text, #edf3ee); background: rgba(255,255,255,.04); border: 1px solid var(--line, rgba(141, 164, 146, .2)); border-radius: 8px; }
 .activity-task-input:focus { outline: none; border-color: #76be49; box-shadow: 0 0 0 3px rgba(118,190,73,.14); }
+.activity-actions { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.periods-button { border: 1px solid var(--border, #405346); background: transparent; color: var(--accent, #8ed25a); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: .78rem; cursor: pointer; white-space: nowrap; }
+.periods-button:hover { background: rgba(118, 190, 73, .12); }
+.periods-modal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 22px; background: rgba(5, 12, 8, .72); backdrop-filter: blur(5px); }
+.periods-card { width: min(100%, 1040px); max-height: min(82vh, 760px); overflow: auto; border: 1px solid var(--border, #36503c); border-radius: 18px; background: var(--card, #152018); box-shadow: 0 24px 60px rgba(0,0,0,.36); padding: 24px; }
+.periods-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
+.periods-header h2 { margin: 0; }
+.periods-help { margin: 0 0 18px; color: var(--muted, #9aaba0); }
+.periods-close { width: 36px; height: 36px; border: 1px solid var(--border, #405346); border-radius: 50%; background: transparent; color: inherit; font-size: 1.4rem; cursor: pointer; }
+.periods-table .activity-task-input { min-width: 180px; }
 @keyframes collector-alert { to { opacity: .35; box-shadow: 0 0 16px currentColor; } }
 @media (max-width: 850px) { .collector-monitor { grid-template-columns: 1fr; } }
