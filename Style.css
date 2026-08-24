@@ -154,6 +154,7 @@ button:disabled { cursor: not-allowed; opacity: .48; filter: grayscale(1); trans
 .periods-button { border: 1px solid var(--border, #405346); background: transparent; color: var(--accent, #8ed25a); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: .78rem; cursor: pointer; white-space: nowrap; }
 .periods-button:hover { background: rgba(118, 190, 73, .12); }
 .periods-modal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 22px; background: rgba(5, 12, 8, .72); backdrop-filter: blur(5px); }
+.periods-modal[hidden] { display: none; }
 .periods-card { width: min(100%, 1040px); max-height: min(82vh, 760px); overflow: auto; border: 1px solid var(--border, #36503c); border-radius: 18px; background: var(--card, #152018); box-shadow: 0 24px 60px rgba(0,0,0,.36); padding: 24px; }
 .periods-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
 .periods-header h2 { margin: 0; }
