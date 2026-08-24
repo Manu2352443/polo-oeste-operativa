@@ -442,21 +442,25 @@ def inicializar_db():
         conexion.close()
 
 
-def obtener_usuario(usuario):
+def obtener_usuario(identificador):
+    """Busca por cuenta o por el nombre WIS asignado, sin alterar registros."""
     conexion = conectar_db()
 
     try:
         return conexion.execute("""
             SELECT *
             FROM usuarios
-            WHERE usuario = ?
-        """, (usuario,)).fetchone()
+            WHERE LOWER(usuario) = LOWER(?)
+               OR LOWER(COALESCE(nombre_funcionario, '')) = LOWER(?)
+            ORDER BY CASE WHEN LOWER(usuario) = LOWER(?) THEN 0 ELSE 1 END, id ASC
+            LIMIT 1
+        """, (identificador, identificador, identificador)).fetchone()
     finally:
         conexion.close()
 
 
-def credenciales_correctas(usuario, contrasena):
-    registro = obtener_usuario(usuario)
+def credenciales_correctas(identificador, contrasena):
+    registro = obtener_usuario(identificador)
 
     return (
         registro is not None
@@ -583,7 +587,7 @@ def limites_de_fecha(fecha_texto):
 
 def obtener_registros_actividad_filtrados(
     conexion, fecha="", fecha_desde="", fecha_hasta="",
-    funcionario="", consulta="", ahora=None
+    funcionario="", consulta="", ahora=None, empresa_codigo=""
 ):
     """Aplica filtros independientes o combinados al historial de actividad."""
     ahora = ahora or time.time()
@@ -603,6 +607,22 @@ def obtener_registros_actividad_filtrados(
     if limite_hasta:
         condiciones.append("inicio < ?")
         parametros.append(limite_hasta[1])
+    if empresa_codigo:
+        # Los registros históricos no se alteran: la vista usa la operativa
+        # vinculada al funcionario que generó la actividad.
+        condiciones.append("""EXISTS (
+            SELECT 1 FROM usuarios
+            INNER JOIN usuario_empresas
+                ON usuario_empresas.usuario_id = usuarios.id
+            WHERE usuario_empresas.empresa_codigo = ?
+              AND usuarios.es_admin = 0
+              AND (
+                    usuarios.usuario = actividades.funcionario OR
+                    COALESCE(NULLIF(usuarios.nombre_funcionario, ''), usuarios.usuario)
+                        = actividades.funcionario
+              )
+        )""")
+        parametros.append(empresa_codigo)
     if funcionario:
         condiciones.append("funcionario LIKE ? COLLATE NOCASE")
         parametros.append("%" + funcionario + "%")
@@ -847,12 +867,12 @@ def inicio():
         if credenciales_correctas(usuario, contrasena):
             registro = obtener_usuario(usuario)
             if registro is not None and bool(registro["es_admin"]):
-                session["usuario"] = usuario
+                session["usuario"] = registro["usuario"]
                 return redirect("/actividad" if MODO_PRUEBAS_ACTIVIDAD else "/principal")
 
             # Las cuentas operativas no ingresan al panel de supervisiÃ³n:
             # se autentican directamente para utilizar el handheld web.
-            session["handheld_usuario"] = usuario
+            session["handheld_usuario"] = registro["usuario"]
             return redirect("/handheld/panel")
 
         return redirect("/?login=error")
@@ -1764,10 +1784,34 @@ def exportar_usuarios():
     conexion = conectar_db()
     try:
         usuarios_db = conexion.execute("""
-            SELECT usuario, es_admin FROM usuarios
-            WHERE usuario LIKE ? COLLATE NOCASE
-            ORDER BY es_admin DESC, usuario ASC
-        """, ("%" + filtro_usuarios + "%",)).fetchall()
+            SELECT usuarios.usuario, usuarios.nombre_funcionario,
+                   usuarios.es_admin, usuarios.activo,
+                   GROUP_CONCAT(usuario_empresas.empresa_codigo, ' | ') AS operativas
+            FROM usuarios
+            LEFT JOIN usuario_empresas ON usuario_empresas.usuario_id = usuarios.id
+            WHERE (
+                usuarios.usuario LIKE ? COLLATE NOCASE
+                OR COALESCE(usuarios.nombre_funcionario, '') LIKE ? COLLATE NOCASE
+                OR EXISTS (
+                    SELECT 1 FROM usuario_empresas AS filtro_empresas
+                    INNER JOIN empresas ON empresas.codigo = filtro_empresas.empresa_codigo
+                    WHERE filtro_empresas.usuario_id = usuarios.id
+                      AND (filtro_empresas.empresa_codigo LIKE ? COLLATE NOCASE
+                           OR empresas.descripcion LIKE ? COLLATE NOCASE)
+                )
+                OR (? != '' AND (
+                    (usuarios.es_admin = 1 AND 'administrador' LIKE ? COLLATE NOCASE)
+                    OR (usuarios.es_admin = 0 AND 'operario' LIKE ? COLLATE NOCASE)
+                ))
+            )
+            GROUP BY usuarios.id
+            ORDER BY usuarios.es_admin DESC, usuarios.usuario ASC
+        """, (
+            "%" + filtro_usuarios + "%", "%" + filtro_usuarios + "%",
+            "%" + filtro_usuarios + "%", "%" + filtro_usuarios + "%",
+            filtro_usuarios,
+            "%" + filtro_usuarios + "%", "%" + filtro_usuarios + "%"
+        )).fetchall()
         colectores_db = conexion.execute("""
             SELECT numero, descripcion, activo FROM colectores
             WHERE numero LIKE ? COLLATE NOCASE OR descripcion LIKE ? COLLATE NOCASE
@@ -1776,9 +1820,14 @@ def exportar_usuarios():
         libro = Workbook()
         hoja = libro.active
         hoja.title = "Usuarios"
-        hoja.append(["Usuario", "Tipo"])
+        hoja.append(["Usuario", "Nombre WIS", "Tipo", "Estado", "Operativas"])
         for registro in usuarios_db:
-            hoja.append([registro["usuario"], "Administrador" if registro["es_admin"] else "Operario"])
+            hoja.append([
+                registro["usuario"], registro["nombre_funcionario"] or "",
+                "Administrador" if registro["es_admin"] else "Operario",
+                "Activo" if registro["activo"] else "Inactivo",
+                "Todas las operativas" if registro["es_admin"] else (registro["operativas"] or "Sin asignar")
+            ])
         equipos = libro.create_sheet("Handhelds")
         equipos.append(["Número", "Descripción", "Estado"])
         for registro in colectores_db:
@@ -1788,7 +1837,7 @@ def exportar_usuarios():
             for celda in pagina[1]:
                 celda.fill = PatternFill("solid", fgColor="315F36")
                 celda.font = Font(color="FFFFFF", bold=True)
-            for letra, ancho in zip("ABC", [25, 34, 16]):
+            for letra, ancho in zip("ABCDE", [25, 28, 16, 14, 35]):
                 pagina.column_dimensions[letra].width = ancho
         archivo = BytesIO()
         libro.save(archivo)
@@ -1815,6 +1864,8 @@ def crear_usuario():
         return redirigir_usuarios(
             "El usuario y la contraseña deben tener al menos 3 caracteres."
         )
+    if not es_admin and not codigos_empresa:
+        return redirigir_usuarios("Selecciona al menos una operativa para el operario.")
 
     conexion = conectar_db()
 
@@ -1852,9 +1903,12 @@ def actualizar_usuario():
     nueva_contrasena = request.form.get("contrasena", "")
     es_admin = 1 if request.form.get("tipo") == "admin" else 0
     nombre_funcionario = request.form.get("nombre_funcionario", "").strip()
+    codigos_empresa = [codigo.strip() for codigo in request.form.getlist("empresas") if codigo.strip()]
 
     if len(nuevo_usuario) < 3:
         return redirigir_usuarios("El usuario debe tener al menos 3 caracteres.")
+    if not es_admin and not codigos_empresa:
+        return redirigir_usuarios("Selecciona al menos una operativa para el operario.")
 
     conexion = conectar_db()
 
@@ -1903,6 +1957,23 @@ def actualizar_usuario():
                     nombre_funcionario or None,
                     identificador
                 ))
+
+            # Los administradores visualizan todas las operativas por rol.
+            # Para un operario se actualizan únicamente sus vínculos manuales.
+            if not es_admin:
+                existentes = {fila["codigo"] for fila in conexion.execute("SELECT codigo FROM empresas")}
+                conexion.execute("""
+                    DELETE FROM usuario_empresas
+                    WHERE usuario_id = ? AND origen = 'Manual'
+                """, (identificador,))
+                conexion.executemany("""
+                    INSERT OR IGNORE INTO usuario_empresas
+                    (usuario_id, empresa_codigo, origen, asignado_en)
+                    VALUES (?, ?, 'Manual', ?)
+                """, [
+                    (identificador, codigo, time.time())
+                    for codigo in codigos_empresa if codigo in existentes
+                ])
 
         if usuario_objetivo["usuario"] == session.get("usuario"):
             session["usuario"] = nuevo_usuario
@@ -2049,7 +2120,7 @@ def handheld_login():
 
         registro = obtener_usuario(usuario)
         if credenciales_correctas(usuario, contrasena) and registro is not None and not bool(registro["es_admin"]):
-            session["handheld_usuario"] = usuario
+            session["handheld_usuario"] = registro["usuario"]
             return redirect("/handheld/panel")
 
         return redirect("/handheld?login=error")
@@ -2435,7 +2506,9 @@ def exportar_actividad_filtrada():
     ahora = time.time()
     conexion = conectar_db()
     try:
-        registros = obtener_registros_actividad_filtrados(conexion, ahora=ahora, **filtros)
+        registros = obtener_registros_actividad_filtrados(
+            conexion, ahora=ahora, empresa_codigo=empresa_actual(), **filtros
+        )
         libro = Workbook()
         hoja = libro.active
         hoja.title = "Actividad"
@@ -2611,7 +2684,7 @@ def api_android_login():
                     token_hash, funcionario, colector, creado_en, ultimo_ping
                 ) VALUES (?, ?, ?, ?, ?)
             """, (
-                hash_token(token), usuario, equipo["numero"], ahora, ahora
+                hash_token(token), registro_usuario["usuario"], equipo["numero"], ahora, ahora
             ))
             conexion.execute("""
                 UPDATE colectores
@@ -2622,7 +2695,7 @@ def api_android_login():
 
         return jsonify({
             "token": token,
-            "funcionario": usuario,
+            "funcionario": registro_usuario["usuario"],
             "colector": equipo["numero"]
         })
     finally:
@@ -3054,13 +3127,16 @@ def api_registros_actividad():
                 request.args.get("fecha_hasta", "").strip(),
                 request.args.get("funcionario", "").strip(),
                 request.args.get("consulta", "").strip(),
-                ahora
+                ahora,
+                empresa_actual()
             )
 
             datos = [
                 serializar_registro(registro, ahora)
                 for registro in registros
             ]
+            colectores_visibles = {registro["colector"] for registro in datos}
+            filtrar_colectores = bool(empresa_actual())
 
             hay_operacion = any(
                 registro["status"].startswith("En operacion")
@@ -3076,6 +3152,8 @@ def api_registros_actividad():
             alertas_alarma = []
             alertas_bateria = []
             for colector in colectores:
+                if filtrar_colectores and colector["numero"] not in colectores_visibles:
+                    continue
                 en_linea = bool(colector["ultimo_ping"] and float(colector["ultimo_ping"]) >= ahora - 90)
                 if en_linea and bool(colector["activo"]):
                     activos.append(colector["numero"])

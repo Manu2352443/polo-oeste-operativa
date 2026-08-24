@@ -23,17 +23,24 @@
                 <div><p>USUARIOS</p><h2>Administración de usuarios</h2></div>
                 <div class="section-tools"><span>Cuentas de acceso internas</span><a id="exportarUsuarios" class="open-create-button export-admin-button" href="/usuarios/exportar">Exportar Excel</a><button id="abrirCrearUsuario" type="button" class="open-create-button">+ Crear usuario</button></div>
             </div>
-            <div class="admin-filter"><input id="filtroUsuarios" type="search" placeholder="Buscar usuario" aria-label="Buscar usuario"></div>
+            <div class="admin-filter"><input id="filtroUsuarios" type="search" placeholder="Buscar cuenta, nombre WIS, perfil u operativa" aria-label="Buscar usuarios por cualquier dato"></div>
             <div class="records-scroll"><div id="listaUsuarios" class="records-list">
                 {% for usuario in usuarios %}
-                <article class="record-card" data-busqueda="{{ usuario.usuario|lower }} {% if usuario.es_admin %}administrador{% else %}operario{% endif %}">
+                <article class="record-card" data-busqueda="{{ usuario.usuario|lower }} {{ (usuario.nombre_funcionario or '')|lower }} {% if usuario.es_admin %}administrador activo todas las operativas{% else %}operario {% if usuario.activo %}activo{% else %}inactivo{% endif %} {{ usuario.codigos_empresa or '' }}{% endif %}">
                     <form action="/usuarios/actualizar" method="post" class="record-form">
                         <input type="hidden" name="id" value="{{ usuario.id }}">
                         <div class="record-title"><strong>{{ usuario.usuario }}</strong><span>{% if usuario.es_admin %}Administrador{% else %}Operario{% endif %}</span></div>
                         <input type="text" name="usuario" value="{{ usuario.usuario }}" required>
-                        <input type="text" name="nombre_funcionario" value="{{ usuario.nombre_funcionario or '' }}" placeholder="Nombre en WMS (solo operario)">
+                        <input type="text" name="nombre_funcionario" value="{{ usuario.nombre_funcionario or '' }}" placeholder="Nombre WIS (también permite iniciar sesión)">
                         <input type="password" name="contrasena" placeholder="Nueva contraseña (opcional)">
                         <select name="tipo"><option value="operario" {% if not usuario.es_admin %}selected{% endif %}>Operario</option><option value="admin" {% if usuario.es_admin %}selected{% endif %}>Administrador</option></select>
+                        {% set empresas_usuario = (usuario.codigos_empresa or '').split('|') %}
+                        <label class="operatives-label" {% if usuario.es_admin %}hidden{% endif %}>OPERATIVAS ASIGNADAS
+                            <select name="empresas" multiple size="4" {% if usuario.es_admin %}disabled{% else %}required{% endif %} aria-label="Operativas asignadas">
+                                {% for empresa in empresas %}<option value="{{ empresa.codigo }}" {% if empresa.codigo in empresas_usuario %}selected{% endif %}>{{ empresa.codigo }} · {{ empresa.descripcion }}</option>{% endfor %}
+                            </select>
+                        </label>
+                        <p class="operatives-note" {% if not usuario.es_admin %}hidden{% endif %}>OPERATIVAS · Acceso a todas por ser administrador.</p>
                         <button type="submit" class="save-button">Guardar cambios</button>
                     </form>
                     <form action="/usuarios/eliminar" method="post" class="delete-form"><input type="hidden" name="id" value="{{ usuario.id }}"><button type="submit" class="delete-button" {% if usuario.usuario == usuario_actual %}disabled{% endif %}>Eliminar</button></form>
@@ -87,11 +94,14 @@
             <form action="/usuarios/crear" method="post" class="create-form">
                 <input type="text" name="usuario" placeholder="Nombre de usuario" required>
                 <input type="password" name="contrasena" placeholder="Contraseña" required>
-                <input type="text" name="nombre_funcionario" placeholder="Nombre del funcionario en WMS">
-                <select name="tipo"><option value="operario">Operario</option><option value="admin">Administrador</option></select>
-                <select name="empresas" multiple size="5" aria-label="Operativas iniciales">
+                <input type="text" name="nombre_funcionario" placeholder="Nombre WIS (también permite iniciar sesión)">
+                <select name="tipo" id="tipoNuevoUsuario"><option value="operario">Operario</option><option value="admin">Administrador</option></select>
+                <label id="operativasNuevoUsuario" class="operatives-label">OPERATIVAS ASIGNADAS
+                <select name="empresas" multiple size="5" required aria-label="Operativas iniciales">
                     {% for empresa in empresas %}<option value="{{ empresa.codigo }}">{{ empresa.codigo }} · {{ empresa.descripcion }}</option>{% endfor %}
                 </select>
+                </label>
+                <p id="notaAdministrador" class="operatives-note" hidden>Los administradores tienen acceso a todas las operativas.</p>
                 <button type="submit">Crear usuario</button>
             </form>
         </section>
@@ -119,6 +129,23 @@
         const filtroUsuarios = document.getElementById("filtroUsuarios");
         const filtroColectores = document.getElementById("filtroColectores");
         const exportarUsuarios = document.getElementById("exportarUsuarios");
+        function actualizarOperativas(formulario) {
+            const tipo = formulario.querySelector('select[name="tipo"]');
+            const etiqueta = formulario.querySelector('.operatives-label');
+            const selector = formulario.querySelector('select[name="empresas"]');
+            const nota = formulario.querySelector('.operatives-note');
+            if (!tipo || !etiqueta || !selector || !nota) return;
+            const esAdmin = tipo.value === 'admin';
+            etiqueta.hidden = esAdmin;
+            nota.hidden = !esAdmin;
+            selector.disabled = esAdmin;
+            selector.required = !esAdmin;
+        }
+        document.querySelectorAll('.record-form, #modalCrearUsuario .create-form').forEach(function (formulario) {
+            actualizarOperativas(formulario);
+            const tipo = formulario.querySelector('select[name="tipo"]');
+            if (tipo) tipo.addEventListener('change', function () { actualizarOperativas(formulario); });
+        });
         function actualizarExportacionUsuarios() { exportarUsuarios.href = "/usuarios/exportar?" + new URLSearchParams({ usuarios: filtroUsuarios.value, colectores: filtroColectores.value }).toString(); }
         filtroUsuarios.addEventListener("input", function () { filtrarRegistros(filtroUsuarios, "#listaUsuarios .record-card"); actualizarExportacionUsuarios(); });
         filtroColectores.addEventListener("input", function () { filtrarRegistros(filtroColectores, "#listaColectores .record-card"); actualizarExportacionUsuarios(); });

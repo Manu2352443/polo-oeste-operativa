@@ -74,5 +74,11 @@ body { min-height: 100vh; margin: 0; color: var(--text); background: radial-grad
 .create-form { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
 .create-form select, .create-form button { grid-column: span 2; }
 .create-form button { min-height: 44px; border: 1px solid #84ce5e; border-radius: 8px; background: linear-gradient(135deg, #9bdb72, #72ba47); color: #091009; cursor: pointer; font: inherit; font-size: 12px; font-weight: 800; }
+.operatives-label { display: grid; gap: 6px; color: var(--muted); font-family: "DM Mono", monospace; font-size: 9px; letter-spacing: .7px; }
+.record-form .operatives-label { grid-column: span 2; }
+.create-form .operatives-label, .create-form .operatives-note { grid-column: span 2; }
+.operatives-label select { min-height: 96px; height: auto; padding: 7px 10px; }
+.operatives-note { align-self: center; margin: 0; color: #a9d78c; font-size: 11px; line-height: 1.45; }
+@media (max-width: 950px) { .record-form .operatives-label { grid-column: span 2; } }
 @media (max-width: 950px) { .config-layout { grid-template-columns: 1fr; } .config-sidebar { display: flex; align-items: center; min-height: auto; padding: 12px 22px; border-right: 0; border-bottom: 1px solid var(--line); gap: 7px; overflow-x: auto; } .config-sidebar p { display: none; } .config-sidebar a { flex: 0 0 auto; margin: 0; } .record-form { grid-template-columns: 1fr 1fr; } .save-button, .record-title { grid-column: span 2; } }
 @media (max-width: 600px) { .admin-header { padding: 16px; } .admin-page { padding: 36px 15px 60px; } .config-sidebar { padding: 10px 15px; } .admin-section { padding: 17px; } .section-heading { align-items: start; flex-direction: column; } .section-tools { width: 100%; align-items: start; flex-direction: column; } .open-create-button { width: 100%; } .section-heading > span { text-align: left; } .records-scroll { max-height: 430px; } .record-form, .create-form,.theme-options { grid-template-columns: 1fr; } .save-button, .record-title, .create-form select, .create-form button { grid-column: auto; } .record-card, .company-record { grid-template-columns: 1fr; } .delete-form { display: block; } .delete-button { width: 100%; } .installation-key { align-items: start; flex-wrap: wrap; } .installation-key form { width: 100%; margin-left: 0; } .renew-key-button { width: 100%; } .admin-modal-card { padding: 19px; } }
