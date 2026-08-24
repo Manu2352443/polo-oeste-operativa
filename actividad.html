@@ -11,7 +11,11 @@
     <header class="main-banner activity-banner">
         <div class="banner-top">
             <a class="brand" href="/principal"><img class="brand-logo" src="/static/polo-oeste.svg" alt="Polo Oeste"></a>
-            <span class="system-live">Monitoreo en vivo</span>
+            <div class="session-area">
+                <span class="system-live">Monitoreo en vivo</span>
+                <span class="session-user">{{ usuario }}</span>
+                <form action="/logout" method="post"><button type="submit" class="session-logout">Cerrar sesión</button></form>
+            </div>
         </div>
         <div class="banner-content">
             <p class="eyebrow">SEGUIMIENTO OPERATIVO</p>

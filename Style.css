@@ -161,5 +161,11 @@ button:disabled { cursor: not-allowed; opacity: .48; filter: grayscale(1); trans
 .periods-help { margin: 0 0 18px; color: var(--muted, #9aaba0); }
 .periods-close { width: 36px; height: 36px; border: 1px solid var(--border, #405346); border-radius: 50%; background: transparent; color: inherit; font-size: 1.4rem; cursor: pointer; }
 .periods-table .activity-task-input { min-width: 180px; }
+.session-area { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.session-area form { margin: 0; }
+.session-user { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text, #edf3ee); font-weight: 700; font-size: .9rem; }
+.session-logout { border: 1px solid rgba(227,108,103,.7); border-radius: 8px; padding: 7px 11px; background: transparent; color: var(--text, #edf3ee); font: inherit; font-size: .78rem; cursor: pointer; white-space: nowrap; }
+.session-logout:hover { background: rgba(227,108,103,.14); }
+@media (max-width: 620px) { .session-area { gap: 6px; } .session-area .system-live { display: none; } .session-user { max-width: 125px; } }
 @keyframes collector-alert { to { opacity: .35; box-shadow: 0 0 16px currentColor; } }
 @media (max-width: 850px) { .collector-monitor { grid-template-columns: 1fr; } }

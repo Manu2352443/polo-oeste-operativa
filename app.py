@@ -882,7 +882,7 @@ def principal():
 @app.route("/actividad")
 @admin_requerido
 def actividad():
-    return render_template("actividad.html")
+    return render_template("actividad.html", usuario=session.get("usuario", ""))
 
 
 @app.route("/actividad/<int:actividad_id>/eliminar", methods=["POST"])
