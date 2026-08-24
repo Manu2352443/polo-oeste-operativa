@@ -12,7 +12,8 @@ from database import conectar, DatabaseError, IntegrityError
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from io import BytesIO
-from datetime import datetime, time as hora_cero, timedelta
+from datetime import datetime, time as hora_cero, timedelta, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import json
 import os
 import threading
@@ -71,6 +72,11 @@ MODO_PRUEBAS_ACTIVIDAD = os.environ.get("MODO_PRUEBAS_ACTIVIDAD", "1") == "1"
 COLECTOR_PREDETERMINADO = "Handheld web"
 INACTIVIDAD_MAXIMA = 30 * 60
 TAREAS_OPERATIVAS = ("", "Almacenaje", "Picking", "Control de embarque", "Auditoria")
+try:
+    ZONA_OPERATIVA = ZoneInfo(os.environ.get("TIMEZONE_OPERATIVA", "America/Montevideo"))
+except ZoneInfoNotFoundError:
+    # Windows Store Python puede no incluir la base tzdata. Uruguay opera UTC−3.
+    ZONA_OPERATIVA = timezone(timedelta(hours=-3), name="America/Montevideo")
 # Permite ejecutar pruebas aisladas sin tocar la base operativa.
 RUTA_BD = os.environ.get("POLO_OESTE_DB", os.path.join(RUTA_BASE, "actividad.db"))
 RUTA_CERTIFICADOS = os.path.join(RUTA_BASE, "uploads", "certificados")
@@ -560,7 +566,7 @@ def formatear_tiempo(segundos):
 
 
 def fecha_desde_marca(marca_tiempo):
-    return datetime.fromtimestamp(float(marca_tiempo)).strftime("%Y-%m-%d")
+    return datetime.fromtimestamp(float(marca_tiempo), ZONA_OPERATIVA).strftime("%Y-%m-%d")
 
 
 def limites_de_fecha(fecha_texto):
@@ -569,8 +575,8 @@ def limites_de_fecha(fecha_texto):
     except ValueError:
         return None
 
-    inicio = datetime.combine(fecha, hora_cero.min).timestamp()
-    fin = datetime.combine(fecha + timedelta(days=1), hora_cero.min).timestamp()
+    inicio = datetime.combine(fecha, hora_cero.min, tzinfo=ZONA_OPERATIVA).timestamp()
+    fin = datetime.combine(fecha + timedelta(days=1), hora_cero.min, tzinfo=ZONA_OPERATIVA).timestamp()
 
     return inicio, fin
 
@@ -945,8 +951,8 @@ def serializar_periodo_actividad(periodo, numero, ahora=None):
     return {
         "id": periodo["id"],
         "periodo": numero,
-        "inicio": datetime.fromtimestamp(inicio).strftime("%d/%m/%Y %H:%M:%S"),
-        "fin": datetime.fromtimestamp(fin).strftime("%d/%m/%Y %H:%M:%S") if periodo["fin"] else "En curso",
+        "inicio": datetime.fromtimestamp(inicio, ZONA_OPERATIVA).strftime("%d/%m/%Y %H:%M:%S"),
+        "fin": datetime.fromtimestamp(fin, ZONA_OPERATIVA).strftime("%d/%m/%Y %H:%M:%S") if periodo["fin"] else "En curso",
         "duracion": formatear_tiempo(max(0, int(fin - inicio))),
         "tarea": periodo["tarea"] or "",
         "activo": periodo["fin"] is None
@@ -2374,8 +2380,8 @@ def exportar_actividad():
 
             segundos = max(0, int(fin_periodo - inicio_periodo))
             tramo = (
-                f"{datetime.fromtimestamp(inicio_periodo).strftime('%H:%M')} - "
-                f"{datetime.fromtimestamp(fin_periodo).strftime('%H:%M')}"
+                f"{datetime.fromtimestamp(inicio_periodo, ZONA_OPERATIVA).strftime('%H:%M')} - "
+                f"{datetime.fromtimestamp(fin_periodo, ZONA_OPERATIVA).strftime('%H:%M')}"
             )
 
             hoja.append([
@@ -2482,8 +2488,8 @@ def exportar_actividad_filtrada():
             hoja_periodos.append([
                 fecha_desde_marca(inicio), periodo["funcionario"], periodo["colector"],
                 contador_periodos[actividad_id],
-                datetime.fromtimestamp(inicio).strftime("%d/%m/%Y %H:%M:%S"),
-                datetime.fromtimestamp(fin).strftime("%d/%m/%Y %H:%M:%S") if periodo["fin"] else "En curso",
+                datetime.fromtimestamp(inicio, ZONA_OPERATIVA).strftime("%d/%m/%Y %H:%M:%S"),
+                datetime.fromtimestamp(fin, ZONA_OPERATIVA).strftime("%d/%m/%Y %H:%M:%S") if periodo["fin"] else "En curso",
                 formatear_tiempo(segundos), segundos, periodo["tarea"] or ""
             ])
         for letra, ancho in zip("ABCDEFGHI", [14, 28, 22, 12, 22, 22, 16, 18, 26]):
